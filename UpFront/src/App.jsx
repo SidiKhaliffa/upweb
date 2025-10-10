@@ -4,32 +4,22 @@ import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 
 const App = () => {
-  const [token, setToken] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [token, setToken] = useState(() => localStorage.getItem("token"));
 
   useEffect(() => {
-    const savedToken = localStorage.getItem("token");
-    if (savedToken) {
-      setToken(savedToken);
-    }
-    setLoading(false);
+    const onStorage = () => setToken(localStorage.getItem("token"));
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
   }, []);
-
-  if (loading) {
-    return <div>Loading...</div>; // optional spinner or splash
-  }
 
   return (
     <Routes>
-      <Route path="/login" element={<Login />} />
+      <Route path="/login" element={<Login setToken={setToken} />} />
       <Route
         path="/dashboard"
-        element={token ? <Dashboard /> : <Navigate to="/login" />}
+        element={token ? <Dashboard /> : <Navigate to="/login" replace />}
       />
-      <Route
-        path="*"
-        element={<Navigate to={token ? "/dashboard" : "/login"} />}
-      />
+      <Route path="*" element={<Navigate to={token ? "/dashboard" : "/login"} replace />} />
     </Routes>
   );
 };
