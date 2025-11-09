@@ -32,9 +32,10 @@ const Login = () => {
       console.log("Response data:", data);
       if (response.ok) {
         // Assuming the response contains a token and user info
-        localStorage.setItem("token", data.token);
+        console.log("Login successful:", data);
+        localStorage.setItem("token", data.accessToken);
         localStorage.setItem("user", JSON.stringify(data.user));
-        alert("Login successful!");
+        alert("Connection reussite!!!");
         navigate("/dashboard");
       } else {
         alert(data.message || "Login failed. Please check your credentials.");

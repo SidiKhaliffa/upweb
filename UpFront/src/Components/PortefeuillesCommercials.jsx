@@ -13,6 +13,7 @@ const PortefeuillesCommercials = () => {
   const [currentApiUrl, setCurrentApiUrl] = useState("");
 
   const fetchCommercialistes = async () => {
+    console.log("token : ", localStorage.getItem("token"));
     try {
       const response = await fetch(
         "https://universellepeintre.oneposts.io/api/Commerces",
