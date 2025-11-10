@@ -34,6 +34,8 @@ const Login = () => {
         // Assuming the response contains a token and user info
         console.log("Login successful:", data);
         localStorage.setItem("token", data.accessToken);
+        localStorage.setItem("refreshToken", data.refreshToken);
+        localStorage.setItem("expiration", data.expiration);
         localStorage.setItem("user", JSON.stringify(data.user));
         alert("Connection reussite!!!");
         navigate("/dashboard");

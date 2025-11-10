@@ -1,7 +1,9 @@
 import React, { useState } from "react";
 import "./InscriptionClient.css";
+import { useNavigate } from "react-router-dom";
 
 const InscriptionClient = () => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     code: "",
     zone: "",
@@ -23,6 +25,38 @@ const InscriptionClient = () => {
   const handleSubmit = async () => {
     console.log("Inscription data:", formData);
     // Handle form submission here
+
+    const currentTime = new Date().toISOString();
+
+    if(new Date(currentTime) > new Date(localStorage.getItem("expiration"))) {
+      try {
+        const refreshResponse = await fetch("https://universellepeintre.oneposts.io/api/User/refresh", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            refreshToken: localStorage.getItem("refreshToken"),
+          }),
+        });
+        const refreshData = await refreshResponse.json();
+        if (refreshResponse.ok) {
+          localStorage.setItem("token", refreshData.accessToken);
+          localStorage.setItem("refreshToken", refreshData.refreshToken);
+          localStorage.setItem("expiration", refreshData.expiration);
+          console.log("Token refreshed successfully");
+        } else {
+          alert("Votre session a expiré. Veuillez vous reconnecter.");
+          navigate("/login");
+          return;
+        }
+      } catch (error) {
+        console.error("Error refreshing token:", error);
+        alert("Une erreur est survenue lors du rafraîchissement du token.");
+        return;
+      }
+    }
+
     try {
       const response = await fetch(
         "https://universellepeintre.oneposts.io/api/Clients",
@@ -35,7 +69,7 @@ const InscriptionClient = () => {
           body: JSON.stringify(formData),
         }
       );
-      // const data = await response.json();
+      const data = await response.json();
       if (response.ok) {
         alert("Client inscrit avec succès!");
         setFormData({

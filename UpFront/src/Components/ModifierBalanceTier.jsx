@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import './ModifierBalanceTier.css';
+import { useNavigate } from 'react-router-dom';
 
 const ModifierBalanceTier = () => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     CodeClient: '',
     priseCompta: ''
@@ -18,6 +20,36 @@ const ModifierBalanceTier = () => {
   const handleSubmit = async () => {
     console.log('Balance Tier data:', formData);
     // Handle form submission here
+    const currentTime = new Date().toISOString();
+
+    if(new Date(currentTime) > new Date(localStorage.getItem("expiration"))) {
+      try {
+        const refreshResponse = await fetch("https://universellepeintre.oneposts.io/api/User/refresh", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            refreshToken: localStorage.getItem("refreshToken"),
+          }),
+        });
+        const refreshData = await refreshResponse.json();
+        if (refreshResponse.ok) {
+          localStorage.setItem("token", refreshData.accessToken);
+          localStorage.setItem("refreshToken", refreshData.refreshToken);
+          localStorage.setItem("expiration", refreshData.expiration);
+          console.log("Token refreshed successfully");
+        } else {
+          alert("Votre session a expiré. Veuillez vous reconnecter.");
+          navigate("/login");
+          return;
+        }
+      } catch (error) {
+        console.error("Error refreshing token:", error);
+        alert("Une erreur est survenue lors du rafraîchissement du token.");
+        return;
+      }
+    }
     try {
       const response = await fetch('https://universellepeintre.oneposts.io/api/Stock/PriseCompta', {
         method: 'POST',

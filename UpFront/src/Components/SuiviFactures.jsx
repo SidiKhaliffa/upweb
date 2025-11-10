@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { ChevronDown, Download, X } from "lucide-react";
 import "./SuiviFactures.css";
+import { useNavigate } from "react-router-dom";
 
 const normalizeProduits = (raw) => {
   // Try to find an array in common payload shapes
@@ -35,6 +36,7 @@ const normalizeProduits = (raw) => {
 };
 
 const SuiviFactures = () => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     date: "",
     codeClient: "",
@@ -74,7 +76,7 @@ const SuiviFactures = () => {
 
   // Token storage (you'll need to implement your own token management)
   const getToken = () => {
-    return localStorage.getItem("token") || "";
+    return localStorage.getItem("token");
   };
 
   // Fetch products on component mount
@@ -83,6 +85,36 @@ const SuiviFactures = () => {
   }, []);
 
   const fetchProduits = async () => {
+    const currentTime = new Date().toISOString();
+
+    if(new Date(currentTime) > new Date(localStorage.getItem("expiration"))) {
+      try {
+        const refreshResponse = await fetch("https://universellepeintre.oneposts.io/api/User/refresh", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            refreshToken: localStorage.getItem("refreshToken"),
+          }),
+        });
+        const refreshData = await refreshResponse.json();
+        if (refreshResponse.ok) {
+          localStorage.setItem("token", refreshData.accessToken);
+          localStorage.setItem("refreshToken", refreshData.refreshToken);
+          localStorage.setItem("expiration", refreshData.expiration);
+          console.log("Token refreshed successfully");
+        } else {
+          alert("Votre session a expiré. Veuillez vous reconnecter.");
+          navigate("/login");
+          return;
+        }
+      } catch (error) {
+        console.error("Error refreshing token:", error);
+        alert("Une erreur est survenue lors du rafraîchissement du token.");
+        return;
+      }
+    }
     try {
       const response = await fetch(
         "https://universellepeintre.oneposts.io/api/Stock/Produits",
@@ -224,6 +256,37 @@ const SuiviFactures = () => {
       distribiteur: formData.distributeur,
       StockProduitdto: stockProduits,
     };
+
+    const currentTime = new Date().toISOString();
+
+    if(new Date(currentTime) > new Date(localStorage.getItem("expiration"))) {
+      try {
+        const refreshResponse = await fetch("https://universellepeintre.oneposts.io/api/User/refresh", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            refreshToken: localStorage.getItem("refreshToken"),
+          }),
+        });
+        const refreshData = await refreshResponse.json();
+        if (refreshResponse.ok) {
+          localStorage.setItem("token", refreshData.accessToken);
+          localStorage.setItem("refreshToken", refreshData.refreshToken);
+          localStorage.setItem("expiration", refreshData.expiration);
+          console.log("Token refreshed successfully");
+        } else {
+          alert("Votre session a expiré. Veuillez vous reconnecter.");
+          navigate("/login");
+          return;
+        }
+      } catch (error) {
+        console.error("Error refreshing token:", error);
+        alert("Une erreur est survenue lors du rafraîchissement du token.");
+        return;
+      }
+    }
 
     try {
       const response = await fetch(

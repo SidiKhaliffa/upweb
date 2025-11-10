@@ -1,8 +1,10 @@
 import React, { useState } from "react";
 import { Calendar } from "lucide-react";
 import "./RecetteHistorique.css";
+import { useNavigate } from "react-router-dom";
 
 const RecetteHistorique = () => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     dateRecette: "",
   });
@@ -43,6 +45,37 @@ const RecetteHistorique = () => {
 
       // Construct URL with date parameter (matching C# logic)
       const url = `https://universellepeintre.oneposts.io/api/Stock/RecetteHistorique?date=${formattedDate}`;
+
+      const currentTime = new Date().toISOString();
+
+    if(new Date(currentTime) > new Date(localStorage.getItem("expiration"))) {
+      try {
+        const refreshResponse = await fetch("https://universellepeintre.oneposts.io/api/User/refresh", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            refreshToken: localStorage.getItem("refreshToken"),
+          }),
+        });
+        const refreshData = await refreshResponse.json();
+        if (refreshResponse.ok) {
+          localStorage.setItem("token", refreshData.accessToken);
+          localStorage.setItem("refreshToken", refreshData.refreshToken);
+          localStorage.setItem("expiration", refreshData.expiration);
+          console.log("Token refreshed successfully");
+        } else {
+          alert("Votre session a expiré. Veuillez vous reconnecter.");
+          navigate("/login");
+          return;
+        }
+      } catch (error) {
+        console.error("Error refreshing token:", error);
+        alert("Une erreur est survenue lors du rafraîchissement du token.");
+        return;
+      }
+    }
 
       // Make GET request with Authorization header
       const response = await fetch(url, {
