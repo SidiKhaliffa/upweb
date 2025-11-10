@@ -69,7 +69,7 @@ const InscriptionClient = () => {
           body: JSON.stringify(formData),
         }
       );
-      const data = await response.json();
+      const data = await response;
       if (response.ok) {
         alert("Client inscrit avec succès!");
         setFormData({
