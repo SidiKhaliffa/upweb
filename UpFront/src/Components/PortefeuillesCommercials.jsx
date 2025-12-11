@@ -28,11 +28,8 @@ const PortefeuillesCommercials = () => {
         });
         const refreshData = await refreshResponse.json();
         if (refreshResponse.ok) {
-          localStorage.removeItem("token");
           localStorage.setItem("token", refreshData.accessToken);
-          localStorage.removeItem("refreshToken");
           localStorage.setItem("refreshToken", refreshData.refreshToken);
-          localStorage.removeItem("expiration");
           localStorage.setItem("expiration", refreshData.expiration);
           console.log("Token refreshed successfully");
         } else {
