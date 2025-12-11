@@ -456,23 +456,9 @@ const AjouterStockClient = () => {
     }));
   };
 
-  // Validate date format (dd.MM.yyyy like in C#)
   const handleDateChange = (e) => {
     const { name, value } = e.target;
-    
-    if (value) {
-      // Convert from HTML date format (yyyy-MM-dd) to dd.MM.yyyy for validation
-      const dateObj = new Date(value);
-      const formattedDate = `${dateObj.getDate().toString().padStart(2, '0')}.${(dateObj.getMonth() + 1).toString().padStart(2, '0')}.${dateObj.getFullYear()}`;
-      
-      // Validate format dd.MM.yyyy
-      const dateRegex = /^\d{2}\.\d{2}\.\d{4}$/;
-      if (!dateRegex.test(formattedDate)) {
-        alert("Le format de la date doit être 'dd.MM.yyyy'.");
-        return;
-      }
-    }
-    
+
     setFormData((prev) => ({
       ...prev,
       [name]: value,
@@ -482,12 +468,12 @@ const AjouterStockClient = () => {
   // Validate decimal/number inputs like PriseCompta_TextChanged in C#
   const handleNumberChange = (e) => {
     const { name, value } = e.target;
-    
+
     if (value && !Number.isInteger(Number(value))) {
       alert("La valeur doit être un nombre entier.");
       return;
     }
-    
+
     setFormData((prev) => ({
       ...prev,
       [name]: value,
@@ -520,21 +506,25 @@ const AjouterStockClient = () => {
 
     const currentTime = new Date().toISOString();
 
-    if(new Date(currentTime) > new Date(localStorage.getItem("expiration"))) {
+    if (new Date(currentTime) > new Date(localStorage.getItem("expiration"))) {
       try {
-        const refreshResponse = await fetch("https://universellepeintre.oneposts.io/api/User/refresh", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            refreshToken: localStorage.getItem("refreshToken"),
-          }),
-        });
+        const refreshResponse = await fetch(
+          "https://universellepeintre.oneposts.io/api/User/refresh",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(localStorage.getItem("refreshToken"),),
+          }
+        );
         const refreshData = await refreshResponse.json();
         if (refreshResponse.ok) {
+          localStorage.removeItem("token");
           localStorage.setItem("token", refreshData.accessToken);
+          localStorage.removeItem("refreshToken");
           localStorage.setItem("refreshToken", refreshData.refreshToken);
+          localStorage.removeItem("expiration");
           localStorage.setItem("expiration", refreshData.expiration);
           console.log("Token refreshed successfully");
         } else {
@@ -661,8 +651,13 @@ const AjouterStockClient = () => {
       const produit = formData[`produit${i}`];
       const quantite = formData[`quantite${i}`];
 
-      if ((produit && !quantite) || (quantite && !Number.isInteger(Number(quantite)))) {
-        alert(`La Quantité ${i} doit être un nombre entier si un produit est sélectionné.`);
+      if (
+        (produit && !quantite) ||
+        (quantite && !Number.isInteger(Number(quantite)))
+      ) {
+        alert(
+          `La Quantité ${i} doit être un nombre entier si un produit est sélectionné.`
+        );
         return false;
       }
     }
@@ -673,20 +668,20 @@ const AjouterStockClient = () => {
   // Error handling like HandleError() in C#
   const handleError = (status, errorContent) => {
     console.log("Error Content: " + errorContent);
-    
+
     try {
       const errorResponse = JSON.parse(errorContent);
       if (errorResponse?.errors) {
         const errorMessages = Object.values(errorResponse.errors).flat();
         if (errorMessages.length > 0) {
-          alert(errorMessages.join('\n'));
+          alert(errorMessages.join("\n"));
           return;
         }
       }
     } catch (ex) {
       console.log("Deserialization Error: " + ex.message);
     }
-    
+
     alert(`An error occurred: ${errorContent}`);
   };
 
@@ -697,10 +692,10 @@ const AjouterStockClient = () => {
     }
 
     console.log("Stock data:", formData);
-  
+
     // Build StockProduitdto array - only add if both product and quantity exist
     const stockProduitdto = [];
-    
+
     // Add product 1 (required)
     if (formData.produit1 && formData.quantite1) {
       stockProduitdto.push({
@@ -721,7 +716,7 @@ const AjouterStockClient = () => {
         });
       }
     }
-  
+
     // Build payload matching C# UpdateStockdto structure
     const payload = {
       CodeClient: formData.CodeClient,
@@ -730,22 +725,25 @@ const AjouterStockClient = () => {
       recipe_day: 0, // Default value like in C#
       StockProduitdto: stockProduitdto,
     };
-  
+
     console.log("Payload:", JSON.stringify(payload));
 
     const currentTime = new Date().toISOString();
 
-    if(new Date(currentTime) > new Date(localStorage.getItem("expiration"))) {
+    if (new Date(currentTime) > new Date(localStorage.getItem("expiration"))) {
       try {
-        const refreshResponse = await fetch("https://universellepeintre.oneposts.io/api/User/refresh", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            refreshToken: localStorage.getItem("refreshToken"),
-          }),
-        });
+        const refreshResponse = await fetch(
+          "https://universellepeintre.oneposts.io/api/User/refresh",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              refreshToken: localStorage.getItem("refreshToken"),
+            }),
+          }
+        );
         const refreshData = await refreshResponse.json();
         if (refreshResponse.ok) {
           localStorage.setItem("token", refreshData.accessToken);
@@ -763,17 +761,20 @@ const AjouterStockClient = () => {
         return;
       }
     }
-  
+
     try {
-      const response = await fetch("https://universellepeintre.oneposts.io/api/Stock/update", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: "Bearer " + localStorage.getItem("token"),
-        },
-        body: JSON.stringify(payload),
-      });
-  
+      const response = await fetch(
+        "https://universellepeintre.oneposts.io/api/Stock/update",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: "Bearer " + localStorage.getItem("token"),
+          },
+          body: JSON.stringify(payload),
+        }
+      );
+
       if (response.ok) {
         alert("Les données ont été modifiées avec succès."); // Match C# success message
         clearInputs();
@@ -782,11 +783,11 @@ const AjouterStockClient = () => {
         handleError(response.status, errorContent);
       }
     } catch (error) {
+      console.log("payload111:", payload);
       console.error("Error:", error);
       alert("Une erreur est survenue lors de l'ajout du stock.");
     }
   };
-  
 
   const renderDropdown = (fieldName) => {
     return (

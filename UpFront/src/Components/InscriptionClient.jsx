@@ -28,21 +28,25 @@ const InscriptionClient = () => {
 
     const currentTime = new Date().toISOString();
 
-    if(new Date(currentTime) > new Date(localStorage.getItem("expiration"))) {
+    if (new Date(currentTime) > new Date(localStorage.getItem("expiration"))) {
       try {
-        const refreshResponse = await fetch("https://universellepeintre.oneposts.io/api/User/refresh", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            refreshToken: localStorage.getItem("refreshToken"),
-          }),
-        });
+        const refreshResponse = await fetch(
+          "https://universellepeintre.oneposts.io/api/User/refresh",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(localStorage.getItem("refreshToken")),
+          }
+        );
         const refreshData = await refreshResponse.json();
         if (refreshResponse.ok) {
+          localStorage.removeItem("token");
           localStorage.setItem("token", refreshData.accessToken);
+          localStorage.removeItem("refreshToken");
           localStorage.setItem("refreshToken", refreshData.refreshToken);
+          localStorage.removeItem("expiration");
           localStorage.setItem("expiration", refreshData.expiration);
           console.log("Token refreshed successfully");
         } else {

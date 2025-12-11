@@ -24,20 +24,21 @@ const PortefeuillesCommercials = () => {
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({
-            refreshToken: localStorage.getItem("refreshToken"),
-          }),
+          body: JSON.stringify(localStorage.getItem("refreshToken"),),
         });
         const refreshData = await refreshResponse.json();
         if (refreshResponse.ok) {
+          localStorage.removeItem("token");
           localStorage.setItem("token", refreshData.accessToken);
+          localStorage.removeItem("refreshToken");
           localStorage.setItem("refreshToken", refreshData.refreshToken);
+          localStorage.removeItem("expiration");
           localStorage.setItem("expiration", refreshData.expiration);
           console.log("Token refreshed successfully");
         } else {
           alert("Votre session a expiré. Veuillez vous reconnecter.");
+          localStorage.clear();
           navigate("/login");
-          return;
         }
       } catch (error) {
         console.error("Error refreshing token:", error);
@@ -58,6 +59,7 @@ const PortefeuillesCommercials = () => {
       );
       const data = await response.json();
       setCommercialistes(data);
+      console.log("token Refreshhh: ", localStorage.getItem("refreshToken"));
     } catch (error) {
       console.error("Error fetching commercialistes:", error);
     }
@@ -249,7 +251,7 @@ const PortefeuillesCommercials = () => {
           <div className="popup-overlay" onClick={closePopup}></div>
           <div className="pdf-popup">
             <div className="popup-header">
-              <h2>
+              <h2 className="active-content">
                 {currentPdfType} - {currentCommercialName}
               </h2>
               <button className="close-btn" onClick={closePopup}>

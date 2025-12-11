@@ -150,11 +150,11 @@
   border-radius: 12px 12px 0 0;
 }
 
-.popup-header h2 {
-  color: white;
+.active-content h2 {
   font-size: 24px;
+  color: #1e4a72;
+  margin-bottom: 15px;
   font-weight: 600;
-  margin: 0;
 }
 
 .close-btn {
