@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import {jwtDecode} from "jwt-decode";
 import "./Login.css";
 
 const Login = () => {
@@ -36,7 +37,8 @@ const Login = () => {
       })
       console.log("Login attempt:", { identifier, password });
       const data = await response.json();
-      console.log("Response data:", data);
+      // const decodedToken = jwtDecode(data.accessToken);
+      // console.log("Response data:", decodedToken['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'][1]);
       if (response.ok) {
         // Assuming the response contains a token and user info
         console.log("Login successful:", data);

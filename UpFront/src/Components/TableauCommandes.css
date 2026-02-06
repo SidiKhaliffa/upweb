@@ -1,211 +1,389 @@
 /* TableauCommandes.css */
 
 .tableau-commandes {
-    padding: 0;
-    background-color: #f8f9fa;
-    min-height: 100vh;
-  }
-  
-  .page-title {
-    font-size: 28px;
-    color: #1e4a72;
-    margin-bottom: 30px;
-    font-weight: 600;
-    padding-bottom: 15px;
-    border-bottom: 2px solid #e1e5e9;
-  }
-  
+  padding: 0;
+  background-color: #f8f9fa;
+  min-height: 100vh;
+}
+
+.page-title {
+  font-size: 28px;
+  color: #1e4a72;
+  margin-bottom: 30px;
+  font-weight: 600;
+  padding-bottom: 15px;
+  border-bottom: 2px solid #e1e5e9;
+}
+
+.form-container {
+  background: white;
+  border-radius: 12px;
+  padding: 40px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  max-width: 1200px;
+}
+
+.form-row {
+  display: flex;
+  gap: 40px;
+  margin-bottom: 30px;
+}
+
+.form-group {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.form-group.full-width {
+  flex: 2;
+}
+
+.form-group label {
+  font-size: 16px;
+  color: #333;
+  margin-bottom: 10px;
+  font-weight: 500;
+}
+
+.form-input {
+  padding: 15px 0;
+  border: none;
+  border-bottom: 2px solid #ccc;
+  background: transparent;
+  font-size: 16px;
+  color: #333;
+  transition: all 0.3s ease;
+  outline: none;
+}
+
+.form-input:focus {
+  border-bottom-color: #1e4a72;
+  box-shadow: 0 2px 0 0 rgba(30, 74, 114, 0.2);
+}
+
+/* Error Message */
+.error-message {
+  background-color: #fee;
+  border-left: 4px solid #f44;
+  color: #c33;
+  padding: 15px;
+  margin-bottom: 20px;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+/* Dropdown Styles */
+.dropdown-container {
+  position: relative;
+}
+
+.dropdown-trigger {
+  padding: 15px 0;
+  border-bottom: 2px solid #ccc;
+  background: transparent;
+  font-size: 16px;
+  color: #333;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: all 0.3s ease;
+}
+
+.dropdown-trigger:hover {
+  border-bottom-color: #1e4a72;
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid #e1e5e9;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  z-index: 10;
+  max-height: 200px;
+  overflow-y: auto;
+  margin-top: 5px;
+}
+
+.dropdown-item {
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  border-bottom: 1px solid #f5f5f5;
+}
+
+.dropdown-item:hover {
+  background-color: #f8f9fa;
+}
+
+.dropdown-item:last-child {
+  border-bottom: none;
+}
+
+/* Date Input Styles */
+.date-input-container {
+  position: relative;
+}
+
+.date-input {
+  width: 100%;
+}
+
+.date-icon {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #666;
+  pointer-events: none;
+}
+
+/* Form Actions */
+.form-actions {
+  display: flex;
+  gap: 20px;
+  justify-content: flex-end;
+  margin-top: 40px;
+}
+
+.submit-btn, .generate-btn {
+  border: none;
+  padding: 15px 30px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 200px;
+}
+
+.submit-btn:disabled,
+.generate-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.submit-btn {
+  background: linear-gradient(135deg, #1e4a72, #2d5aa0);
+  color: white;
+  box-shadow: 0 4px 15px rgba(30, 74, 114, 0.3);
+}
+
+.submit-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #2d5aa0, #1e4a72);
+  box-shadow: 0 6px 20px rgba(30, 74, 114, 0.4);
+  transform: translateY(-2px);
+}
+
+.generate-btn {
+  background: linear-gradient(135deg, #1e4a72, #2d5aa0);
+  color: white;
+  box-shadow: 0 4px 15px rgba(30, 74, 114, 0.3);
+}
+
+.generate-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #2d5aa0, #1e4a72);
+  box-shadow: 0 6px 20px rgba(30, 74, 114, 0.4);
+  transform: translateY(-2px);
+}
+
+/* PDF Popup Styles */
+.pdf-popup-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.pdf-popup-container {
+  background: white;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 1200px;
+  height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+.pdf-popup-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 30px;
+  border-bottom: 2px solid #e1e5e9;
+  background: linear-gradient(135deg, #1e4a72, #2d5aa0);
+  border-radius: 12px 12px 0 0;
+}
+
+.pdf-popup-header h2 {
+  margin: 0;
+  color: white;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.pdf-popup-actions {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+}
+
+.download-pdf-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: white;
+  color: #1e4a72;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.download-pdf-btn:hover {
+  background: #f0f0f0;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.close-popup-btn {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.close-popup-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: rotate(90deg);
+}
+
+.pdf-popup-content {
+  flex: 1;
+  padding: 20px;
+  overflow: hidden;
+  background: #f5f5f5;
+  border-radius: 0 0 12px 12px;
+}
+
+.pdf-iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  border-radius: 8px;
+  background: white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
   .form-container {
-    background: white;
-    border-radius: 12px;
-    padding: 40px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-    max-width: 1200px;
+    padding: 30px 20px;
   }
   
   .form-row {
-    display: flex;
-    gap: 40px;
-    margin-bottom: 30px;
-  }
-  
-  .form-group {
-    flex: 1;
-    display: flex;
     flex-direction: column;
-    position: relative;
-  }
-  
-  .form-group.full-width {
-    flex: 2;
-  }
-  
-  .form-group label {
-    font-size: 16px;
-    color: #333;
-    margin-bottom: 10px;
-    font-weight: 500;
-  }
-  
-  .form-input {
-    padding: 15px 0;
-    border: none;
-    border-bottom: 2px solid #ccc;
-    background: transparent;
-    font-size: 16px;
-    color: #333;
-    transition: all 0.3s ease;
-    outline: none;
-  }
-  
-  .form-input:focus {
-    border-bottom-color: #1e4a72;
-    box-shadow: 0 2px 0 0 rgba(30, 74, 114, 0.2);
-  }
-  
-  /* Dropdown Styles */
-  .dropdown-container {
-    position: relative;
-  }
-  
-  .dropdown-trigger {
-    padding: 15px 0;
-    border-bottom: 2px solid #ccc;
-    background: transparent;
-    font-size: 16px;
-    color: #333;
-    cursor: pointer;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    transition: all 0.3s ease;
-  }
-  
-  .dropdown-trigger:hover {
-    border-bottom-color: #1e4a72;
-  }
-  
-  .dropdown-menu {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    right: 0;
-    background: white;
-    border: 1px solid #e1e5e9;
-    border-radius: 8px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-    z-index: 10;
-    max-height: 200px;
-    overflow-y: auto;
-  }
-  
-  .dropdown-item {
-    padding: 12px 16px;
-    cursor: pointer;
-    transition: background-color 0.2s ease;
-    border-bottom: 1px solid #f5f5f5;
-  }
-  
-  .dropdown-item:hover {
-    background-color: #f8f9fa;
-  }
-  
-  .dropdown-item:last-child {
-    border-bottom: none;
-  }
-  
-  /* Date Input Styles */
-  .date-input-container {
-    position: relative;
-  }
-  
-  .date-input {
-    width: 100%;
-  }
-  
-  .date-icon {
-    position: absolute;
-    right: 10px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: #666;
-    pointer-events: none;
-  }
-  
-  /* Form Actions */
-  .form-actions {
-    display: flex;
     gap: 20px;
-    justify-content: flex-end;
-    margin-top: 40px;
+  }
+  
+  .form-actions {
+    flex-direction: column;
+    gap: 15px;
   }
   
   .submit-btn, .generate-btn {
-    border: none;
-    padding: 15px 30px;
+    width: 100%;
+  }
+  
+  .page-title {
+    font-size: 24px;
+  }
+
+  .pdf-popup-container {
+    width: 95%;
+    height: 95vh;
+  }
+
+  .pdf-popup-header {
+    padding: 15px 20px;
+  }
+
+  .pdf-popup-header h2 {
+    font-size: 18px;
+  }
+
+  .pdf-popup-actions {
+    gap: 10px;
+  }
+
+  .download-pdf-btn {
+    padding: 8px 15px;
+    font-size: 12px;
+  }
+
+  .close-popup-btn {
+    width: 35px;
+    height: 35px;
+  }
+}
+
+@media (max-width: 480px) {
+  .form-container {
+    padding: 20px 15px;
+  }
+  
+  .page-title {
+    font-size: 20px;
+  }
+
+  .pdf-popup-overlay {
+    padding: 10px;
+  }
+
+  .pdf-popup-container {
+    width: 100%;
+    height: 100%;
     border-radius: 8px;
+  }
+
+  .pdf-popup-header {
+    padding: 12px 15px;
+    flex-wrap: wrap;
+  }
+
+  .pdf-popup-header h2 {
     font-size: 16px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    min-width: 200px;
   }
-  
-  .submit-btn {
-    background: linear-gradient(135deg, #1e4a72, #2d5aa0);
-    color: white;
-    box-shadow: 0 4px 15px rgba(30, 74, 114, 0.3);
+
+  .download-pdf-btn span {
+    display: none;
   }
-  
-  .submit-btn:hover {
-    background: linear-gradient(135deg, #2d5aa0, #1e4a72);
-    box-shadow: 0 6px 20px rgba(30, 74, 114, 0.4);
-    transform: translateY(-2px);
+
+  .pdf-popup-content {
+    padding: 10px;
   }
-  
-  .generate-btn {
-    background: linear-gradient(135deg, #1e4a72, #2d5aa0);
-    color: white;
-    box-shadow: 0 4px 15px rgba(30, 74, 114, 0.3);
-  }
-  
-  .generate-btn:hover {
-    background: linear-gradient(135deg, #2d5aa0, #1e4a72);
-    box-shadow: 0 6px 20px rgba(30, 74, 114, 0.4);
-    transform: translateY(-2px);
-  }
-  
-  /* Responsive Design */
-  @media (max-width: 768px) {
-    .form-container {
-      padding: 30px 20px;
-    }
-    
-    .form-row {
-      flex-direction: column;
-      gap: 20px;
-    }
-    
-    .form-actions {
-      flex-direction: column;
-      gap: 15px;
-    }
-    
-    .submit-btn, .generate-btn {
-      width: 100%;
-    }
-    
-    .page-title {
-      font-size: 24px;
-    }
-  }
-  
-  @media (max-width: 480px) {
-    .form-container {
-      padding: 20px 15px;
-    }
-    
-    .page-title {
-      font-size: 20px;
-    }
-  }
+}

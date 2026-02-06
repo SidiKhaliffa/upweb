@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { jwtDecode } from "jwt-decode";
 import { ChevronDown, Download, X } from "lucide-react";
 import "./SuiviFactures.css";
 import { useNavigate } from "react-router-dom";
@@ -287,6 +288,12 @@ const SuiviFactures = () => {
     }
 
     try {
+      const token = localStorage.getItem("token");
+      const decodedToken = jwtDecode(token);
+      if(decodedToken['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] == "Admin") {
+        alert("Vous n'avez pas les droits nécessaires pour ajouter une facture.");
+        return;
+      }
       const response = await fetch(
         "https://universellepeintre.oneposts.io/api/Facture/Add",
         {

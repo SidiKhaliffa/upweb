@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { jwtDecode } from 'jwt-decode';
 import './Recette.css';
 import { useNavigate } from 'react-router-dom';
 
@@ -62,6 +63,12 @@ const Recette = () => {
       }
     }
     try{
+      const token = localStorage.getItem('token');
+      const decodedToken = jwtDecode(token);
+        if(decodedToken['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'][1] == "Admin") {
+          alert("Vous n'avez pas les droits nécessaires pour enregistrer une recette.");
+          return;
+        }
       const response = await fetch('https://universellepeintre.oneposts.io/api/Stock/recette', {
         method: 'POST',
         headers: {

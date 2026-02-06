@@ -377,6 +377,7 @@
 // export default AjouterStockClient;
 
 import React, { useState, useEffect } from "react";
+import { jwtDecode } from "jwt-decode";
 import { ChevronDown } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import "./AjouterStockClient.css";
@@ -432,7 +433,7 @@ const AjouterStockClient = () => {
     quantite5: "",
     produit6: "",
     quantite6: "",
-    description: "", // Changed from Description to description to match C#
+    description: "",
   });
 
   const [dropdowns, setDropdowns] = useState({
@@ -760,6 +761,12 @@ const AjouterStockClient = () => {
     }
 
     try {
+      const token = localStorage.getItem("token");
+      const decodetoken = jwtDecode(token);
+      if(decodetoken['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'][1] == "Admin"){
+        alert("Seuls les commerciaux peuvent ajouter du stock client.");
+        return;
+      }
       const response = await fetch(
         "https://universellepeintre.oneposts.io/api/Stock/update",
         {
