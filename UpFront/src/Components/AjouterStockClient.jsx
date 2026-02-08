@@ -501,13 +501,11 @@ const AjouterStockClient = () => {
     }));
   };
 
-  const fetchProduits = async () => {
-    setLoadingProduits(true);
-    setProduitsError(null);
+  useEffect(() => {
+    const refreshTokenIfNeeded = async () => {
+      const currentTime = new Date().toISOString();
 
-    const currentTime = new Date().toISOString();
-
-    if (new Date(currentTime) > new Date(localStorage.getItem("expiration"))) {
+      if (new Date(currentTime) > new Date(localStorage.getItem("expiration"))) {
       try {
         const refreshResponse = await fetch(
           "https://universellepeintre.oneposts.io/api/User/refresh",
@@ -516,7 +514,7 @@ const AjouterStockClient = () => {
             headers: {
               "Content-Type": "application/json",
             },
-            body: JSON.stringify(localStorage.getItem("refreshToken"),),
+            body: JSON.stringify(localStorage.getItem("refreshToken")),
           }
         );
         const refreshData = await refreshResponse.json();
@@ -535,7 +533,15 @@ const AjouterStockClient = () => {
         alert("Une erreur est survenue lors du rafraîchissement du token.");
         return;
       }
-    }
+      }
+    };
+    refreshTokenIfNeeded();
+  }, []);
+
+  const fetchProduits = async () => {
+    setLoadingProduits(true);
+    setProduitsError(null);
+
     try {
       const token = localStorage.getItem("token");
       console.log("Token:", token);
@@ -726,44 +732,14 @@ const AjouterStockClient = () => {
 
     console.log("Payload:", JSON.stringify(payload));
 
-    const currentTime = new Date().toISOString();
-
-    if (new Date(currentTime) > new Date(localStorage.getItem("expiration"))) {
-      try {
-        const refreshResponse = await fetch(
-          "https://universellepeintre.oneposts.io/api/User/refresh",
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              refreshToken: localStorage.getItem("refreshToken"),
-            }),
-          }
-        );
-        const refreshData = await refreshResponse.json();
-        if (refreshResponse.ok) {
-          localStorage.setItem("token", refreshData.accessToken);
-          localStorage.setItem("refreshToken", refreshData.refreshToken);
-          localStorage.setItem("expiration", refreshData.expiration);
-          console.log("Token refreshed successfully");
-        } else {
-          alert("Votre session a expiré. Veuillez vous reconnecter.");
-          navigate("/login");
-          return;
-        }
-      } catch (error) {
-        console.error("Error refreshing token:", error);
-        alert("Une erreur est survenue lors du rafraîchissement du token.");
-        return;
-      }
-    }
-
     try {
       const token = localStorage.getItem("token");
       const decodetoken = jwtDecode(token);
-      if(decodetoken['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'][1] == "Admin"){
+      if (
+        decodetoken[
+          "http://schemas.microsoft.com/ws/2008/06/identity/claims/role"
+        ][1] == "Admin"
+      ) {
         alert("Seuls les commerciaux peuvent ajouter du stock client.");
         return;
       }
