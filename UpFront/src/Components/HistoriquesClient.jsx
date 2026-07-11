@@ -1,13 +1,13 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import './HistoriquesClient.css';
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import "./HistoriquesClient.css";
 
 const HistoriquesClient = ({ authToken }) => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    codeClient: ''
+    codeClient: "",
   });
-  
+
   const [searchResults, setSearchResults] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -15,11 +15,13 @@ const HistoriquesClient = ({ authToken }) => {
   useEffect(() => {
     const refreshTokenIfNeeded = async () => {
       const currentTime = new Date().toISOString();
-  
-      if (new Date(currentTime) > new Date(localStorage.getItem("expiration"))) {
+
+      if (
+        new Date(currentTime) > new Date(localStorage.getItem("expiration"))
+      ) {
         try {
           const refreshResponse = await fetch(
-            "https://universellepeintre.oneposts.io/api/User/refresh",
+            "https://api.universellepeinture.com/api/User/refresh",
             {
               method: "POST",
               headers: {
@@ -51,53 +53,53 @@ const HistoriquesClient = ({ authToken }) => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
   const handleRechercher = async () => {
     if (!formData.codeClient.trim()) {
-      alert('Veuillez entrer un code client');
+      alert("Veuillez entrer un code client");
       return;
     }
 
-    console.log('Recherche historique pour client:', formData.codeClient);
+    console.log("Recherche historique pour client:", formData.codeClient);
     setIsLoading(true);
     setError(null);
 
     try {
       const response = await fetch(
-        `https://universellepeintre.oneposts.io/api/Historique?codeclient=${formData.codeClient}`, 
+        `https://api.universellepeinture.com/api/Historique?codeclient=${formData.codeClient}`,
         {
-          method: 'GET',
+          method: "GET",
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem("token")}`,
-            'Content-Type': 'application/json'
-          }
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+            "Content-Type": "application/json",
+          },
         }
       );
 
       if (response.ok) {
         const data = await response.json();
-        console.log('Données reçues:', data);
+        console.log("Données reçues:", data);
         setSearchResults(data);
       } else {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
     } catch (error) {
-      console.error('Error:', error);
-      setError('Erreur lors de la récupération de l\'historique.');
-      
+      console.error("Error:", error);
+      setError("Erreur lors de la récupération de l'historique.");
+
       if (!authToken) {
         setSearchResults([
           {
-            produit: 'Chiffre D\'affaire',
+            produit: "Chiffre D'affaire",
             quantite: 0,
             montant: 0,
-            date: '1/1/0001 12:00:00 AM'
-          }
+            date: "1/1/0001 12:00:00 AM",
+          },
         ]);
       }
     } finally {
@@ -108,16 +110,20 @@ const HistoriquesClient = ({ authToken }) => {
   const handleRetourner = () => {
     setSearchResults(null);
     setError(null);
-    setFormData({ codeClient: '' });
+    setFormData({ codeClient: "" });
   };
 
   const formatDate = (dateString) => {
-    if (dateString === '1/1/0001 12:00:00 AM') {
-      return 'N/A';
+    if (dateString === "1/1/0001 12:00:00 AM") {
+      return "N/A";
     }
     try {
       const date = new Date(dateString);
-      return date.toLocaleDateString('fr-FR') + ' ' + date.toLocaleTimeString('fr-FR');
+      return (
+        date.toLocaleDateString("fr-FR") +
+        " " +
+        date.toLocaleTimeString("fr-FR")
+      );
     } catch {
       return dateString;
     }
@@ -126,12 +132,8 @@ const HistoriquesClient = ({ authToken }) => {
   return (
     <div className="historiques-client">
       <h1 className="page-title">Historiques du Client</h1>
-      
-      {error && (
-        <div className="error-message">
-          {error}
-        </div>
-      )}
+
+      {error && <div className="error-message">{error}</div>}
 
       {!searchResults ? (
         <div className="search-container">
@@ -150,13 +152,13 @@ const HistoriquesClient = ({ authToken }) => {
           </div>
 
           <div className="search-actions">
-            <button 
-              type="button" 
-              onClick={handleRechercher} 
+            <button
+              type="button"
+              onClick={handleRechercher}
               className="search-btn"
               disabled={isLoading}
             >
-              {isLoading ? 'Recherche...' : 'Rechercher'}
+              {isLoading ? "Recherche..." : "Rechercher"}
             </button>
           </div>
         </div>
@@ -164,9 +166,9 @@ const HistoriquesClient = ({ authToken }) => {
         <div className="results-container">
           <div className="results-header">
             <h2>Historique pour le client: {formData.codeClient}</h2>
-            <button 
-              type="button" 
-              onClick={handleRetourner} 
+            <button
+              type="button"
+              onClick={handleRetourner}
               className="return-btn"
             >
               Retourner

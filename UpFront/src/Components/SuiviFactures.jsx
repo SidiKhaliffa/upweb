@@ -78,11 +78,13 @@ const SuiviFactures = () => {
   useEffect(() => {
     const refreshTokenIfNeeded = async () => {
       const currentTime = new Date().toISOString();
-  
-      if (new Date(currentTime) > new Date(localStorage.getItem("expiration"))) {
+
+      if (
+        new Date(currentTime) > new Date(localStorage.getItem("expiration"))
+      ) {
         try {
           const refreshResponse = await fetch(
-            "https://universellepeintre.oneposts.io/api/User/refresh",
+            "https://api.universellepeinture.com/api/User/refresh",
             {
               method: "POST",
               headers: {
@@ -125,7 +127,7 @@ const SuiviFactures = () => {
   const fetchProduits = async () => {
     try {
       const response = await fetch(
-        "https://universellepeintre.oneposts.io/api/Stock/Produits",
+        "https://api.universellepeinture.com/api/Stock/Produits",
         {
           method: "GET",
           headers: {
@@ -267,17 +269,20 @@ const SuiviFactures = () => {
 
     const currentTime = new Date().toISOString();
 
-    if(new Date(currentTime) > new Date(localStorage.getItem("expiration"))) {
+    if (new Date(currentTime) > new Date(localStorage.getItem("expiration"))) {
       try {
-        const refreshResponse = await fetch("https://universellepeintre.oneposts.io/api/User/refresh", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            refreshToken: localStorage.getItem("refreshToken"),
-          }),
-        });
+        const refreshResponse = await fetch(
+          "https://api.universellepeinture.com/api/User/refresh",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              refreshToken: localStorage.getItem("refreshToken"),
+            }),
+          }
+        );
         const refreshData = await refreshResponse.json();
         if (refreshResponse.ok) {
           localStorage.setItem("token", refreshData.accessToken);
@@ -299,12 +304,18 @@ const SuiviFactures = () => {
     try {
       const token = localStorage.getItem("token");
       const decodedToken = jwtDecode(token);
-      if(decodedToken['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] == "Admin") {
-        alert("Vous n'avez pas les droits nécessaires pour ajouter une facture.");
+      if (
+        decodedToken[
+          "http://schemas.microsoft.com/ws/2008/06/identity/claims/role"
+        ] == "Admin"
+      ) {
+        alert(
+          "Vous n'avez pas les droits nécessaires pour ajouter une facture."
+        );
         return;
       }
       const response = await fetch(
-        "https://universellepeintre.oneposts.io/api/Facture/Add",
+        "https://api.universellepeinture.com/api/Facture/Add",
         {
           method: "POST",
           headers: {
@@ -349,7 +360,7 @@ const SuiviFactures = () => {
 
   const showPdfInPopup = async () => {
     const date = new Date().toISOString().split("T")[0];
-    const url = `https://universellepeintre.oneposts.io/api/Facture/GenerateFacturePdf?FactureDate=${date}`;
+    const url = `https://api.universellepeinture.com/api/Facture/GenerateFacturePdf?FactureDate=${date}`;
     setCurrentPdfUrl(url);
     setPdfPopupOpen(true);
 

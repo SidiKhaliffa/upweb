@@ -18,11 +18,13 @@ const InscriptionClient = () => {
   useEffect(() => {
     const refreshTokenIfNeeded = async () => {
       const currentTime = new Date().toISOString();
-  
-      if (new Date(currentTime) > new Date(localStorage.getItem("expiration"))) {
+
+      if (
+        new Date(currentTime) > new Date(localStorage.getItem("expiration"))
+      ) {
         try {
           const refreshResponse = await fetch(
-            "https://universellepeintre.oneposts.io/api/User/refresh",
+            "https://api.universellepeinture.com/api/User/refresh",
             {
               method: "POST",
               headers: {
@@ -67,12 +69,16 @@ const InscriptionClient = () => {
     try {
       const token = localStorage.getItem("token");
       const decodedToken = jwtDecode(token);
-      if(decodedToken['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'][1] == "Admin") {
+      if (
+        decodedToken[
+          "http://schemas.microsoft.com/ws/2008/06/identity/claims/role"
+        ][1] == "Admin"
+      ) {
         alert("Vous n'avez pas les droits pour inscrire un client.");
         return;
       }
       const response = await fetch(
-        "https://universellepeintre.oneposts.io/api/Clients",
+        "https://api.universellepeinture.com/api/Clients",
         {
           method: "POST",
           headers: {

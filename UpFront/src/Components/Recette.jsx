@@ -1,24 +1,26 @@
-import React, { useState, useEffect } from 'react';
-import { jwtDecode } from 'jwt-decode';
-import './Recette.css';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from "react";
+import { jwtDecode } from "jwt-decode";
+import "./Recette.css";
+import { useNavigate } from "react-router-dom";
 
 const Recette = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    CodeClient: '',
-    priseCompta: '',
-    Recette_Date: ''
+    CodeClient: "",
+    priseCompta: "",
+    Recette_Date: "",
   });
 
   useEffect(() => {
     const refreshTokenIfNeeded = async () => {
       const currentTime = new Date().toISOString();
-  
-      if (new Date(currentTime) > new Date(localStorage.getItem("expiration"))) {
+
+      if (
+        new Date(currentTime) > new Date(localStorage.getItem("expiration"))
+      ) {
         try {
           const refreshResponse = await fetch(
-            "https://universellepeintre.oneposts.io/api/User/refresh",
+            "https://api.universellepeinture.com/api/User/refresh",
             {
               method: "POST",
               headers: {
@@ -50,63 +52,73 @@ const Recette = () => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
   const handleSubmit = async () => {
-    console.log('Recette data:', formData);
-    if(!formData.Recette_Date){
-      alert('Veuillez sélectionner une date de recette.');
+    console.log("Recette data:", formData);
+    if (!formData.Recette_Date) {
+      alert("Veuillez sélectionner une date de recette.");
       return;
-    }
-    else if(!formData.priseCompta || isNaN(formData.priseCompta) || Number(formData.priseCompta) <= 0){
-      alert('Veuillez entrer un montant de recette valide.');
+    } else if (
+      !formData.priseCompta ||
+      isNaN(formData.priseCompta) ||
+      Number(formData.priseCompta) <= 0
+    ) {
+      alert("Veuillez entrer un montant de recette valide.");
       return;
-    }
-    else if(!formData.CodeClient){
-      alert('Veuillez entrer un code client.');
+    } else if (!formData.CodeClient) {
+      alert("Veuillez entrer un code client.");
       return;
     }
 
-    try{
-      const token = localStorage.getItem('token');
+    try {
+      const token = localStorage.getItem("token");
       const decodedToken = jwtDecode(token);
-        if(decodedToken['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'][1] == "Admin") {
-          alert("Vous n'avez pas les droits nécessaires pour enregistrer une recette.");
-          return;
+      if (
+        decodedToken[
+          "http://schemas.microsoft.com/ws/2008/06/identity/claims/role"
+        ][1] == "Admin"
+      ) {
+        alert(
+          "Vous n'avez pas les droits nécessaires pour enregistrer une recette."
+        );
+        return;
+      }
+      const response = await fetch(
+        "https://api.universellepeinture.com/api/Stock/recette",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+            "content-type": "application/json",
+          },
+          body: JSON.stringify(formData),
         }
-      const response = await fetch('https://universellepeintre.oneposts.io/api/Stock/recette', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-          'content-type': 'application/json'
-        },
-        body: JSON.stringify(formData)
-      });
-      if(response.ok){
-        alert('Recette enregistrée avec succès!');
+      );
+      if (response.ok) {
+        alert("Recette enregistrée avec succès!");
         setFormData({
-          CodeClient: '',
-          priseCompta: '',
-          Recette_Date: ''
+          CodeClient: "",
+          priseCompta: "",
+          Recette_Date: "",
         });
       } else {
-        alert('Erreur lors de l\'enregistrement de la recette.');
+        alert("Erreur lors de l'enregistrement de la recette.");
       }
-    }
-    catch(error){
-      console.error('Error:', error);
-      alert('Erreur lors de l\'enregistrement de la recette.');
+    } catch (error) {
+      console.error("Error:", error);
+      alert("Erreur lors de l'enregistrement de la recette.");
     }
   };
 
   return (
     <div className="recette">
       <h1 className="page-title">Recette</h1>
-      
+
       <div className="form-container">
         <div className="form-group">
           <label htmlFor="CodeClient">Code Client</label>

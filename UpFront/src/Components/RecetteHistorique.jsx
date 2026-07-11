@@ -12,11 +12,13 @@ const RecetteHistorique = () => {
   useEffect(() => {
     const refreshTokenIfNeeded = async () => {
       const currentTime = new Date().toISOString();
-  
-      if (new Date(currentTime) > new Date(localStorage.getItem("expiration"))) {
+
+      if (
+        new Date(currentTime) > new Date(localStorage.getItem("expiration"))
+      ) {
         try {
           const refreshResponse = await fetch(
-            "https://universellepeintre.oneposts.io/api/User/refresh",
+            "https://api.universellepeinture.com/api/User/refresh",
             {
               method: "POST",
               headers: {
@@ -81,7 +83,7 @@ const RecetteHistorique = () => {
       const formattedDate = new Date(selectedDate).toISOString().split("T")[0];
 
       // Construct URL with date parameter (matching C# logic)
-      const url = `https://universellepeintre.oneposts.io/api/Stock/RecetteHistorique?date=${formattedDate}`;
+      const url = `https://api.universellepeinture.com/api/Stock/RecetteHistorique?date=${formattedDate}`;
 
       // Make GET request with Authorization header
       const response = await fetch(url, {
@@ -254,9 +256,7 @@ const RecetteHistorique = () => {
                       <td className="date">{formatDate(item.date)}</td>
                       <td className="nom">{item.name}</td>
                       <td className="code-client">{item.codeClient}</td>
-                      <td className="recette">
-                        {item.recette} MRU
-                      </td>
+                      <td className="recette">{item.recette} MRU</td>
                     </tr>
                   ))
                 ) : (
@@ -278,7 +278,8 @@ const RecetteHistorique = () => {
                   {searchResults.reduce(
                     (sum, item) => sum + (item.recette || 0),
                     0
-                  )} MRU
+                  )}{" "}
+                  MRU
                 </div>
               </div>
               <div className="summary-card">

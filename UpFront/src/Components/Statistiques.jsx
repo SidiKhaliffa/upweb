@@ -12,11 +12,13 @@ const Statistiques = ({ authToken }) => {
   useEffect(() => {
     const refreshTokenIfNeeded = async () => {
       const currentTime = new Date().toISOString();
-  
-      if (new Date(currentTime) > new Date(localStorage.getItem("expiration"))) {
+
+      if (
+        new Date(currentTime) > new Date(localStorage.getItem("expiration"))
+      ) {
         try {
           const refreshResponse = await fetch(
-            "https://universellepeintre.oneposts.io/api/User/refresh",
+            "https://api.universellepeinture.com/api/User/refresh",
             {
               method: "POST",
               headers: {
@@ -50,10 +52,10 @@ const Statistiques = ({ authToken }) => {
   const fetchStatistics = async () => {
     setIsLoading(true);
     setError(null);
-  
+
     try {
       const response = await fetch(
-        "https://universellepeintre.oneposts.io/api/Statistique",
+        "https://api.universellepeinture.com/api/Statistique",
         {
           method: "GET",
           headers: {
@@ -166,9 +168,7 @@ const Statistiques = ({ authToken }) => {
                       <td className="numeric-value">
                         {formatPercentage(product.pourcentageProd)}
                       </td>
-                      <td className="currency-value">
-                        {product.montant}
-                      </td>
+                      <td className="currency-value">{product.montant}</td>
                     </tr>
                   ))
                 ) : (

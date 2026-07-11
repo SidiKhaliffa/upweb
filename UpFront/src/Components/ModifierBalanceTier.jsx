@@ -1,23 +1,25 @@
-import React, { useState, useEffect } from 'react';
-import { jwtDecode } from 'jwt-decode';
-import './ModifierBalanceTier.css';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from "react";
+import { jwtDecode } from "jwt-decode";
+import "./ModifierBalanceTier.css";
+import { useNavigate } from "react-router-dom";
 
 const ModifierBalanceTier = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    CodeClient: '',
-    priseCompta: ''
+    CodeClient: "",
+    priseCompta: "",
   });
 
   useEffect(() => {
     const refreshTokenIfNeeded = async () => {
       const currentTime = new Date().toISOString();
-  
-      if (new Date(currentTime) > new Date(localStorage.getItem("expiration"))) {
+
+      if (
+        new Date(currentTime) > new Date(localStorage.getItem("expiration"))
+      ) {
         try {
           const refreshResponse = await fetch(
-            "https://universellepeintre.oneposts.io/api/User/refresh",
+            "https://api.universellepeinture.com/api/User/refresh",
             {
               method: "POST",
               headers: {
@@ -49,51 +51,59 @@ const ModifierBalanceTier = () => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
   const handleSubmit = async () => {
-    console.log('Balance Tier data:', formData);
+    console.log("Balance Tier data:", formData);
     // Handle form submission here
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem("token");
       const decodedToken = jwtDecode(token);
-      if(decodedToken['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'][1] == "Admin") {
-        alert("Vous n'avez pas les droits nécessaires pour modifier la balance.");
+      if (
+        decodedToken[
+          "http://schemas.microsoft.com/ws/2008/06/identity/claims/role"
+        ][1] == "Admin"
+      ) {
+        alert(
+          "Vous n'avez pas les droits nécessaires pour modifier la balance."
+        );
         return;
       }
-      const response = await fetch('https://universellepeintre.oneposts.io/api/Stock/PriseCompta', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: 'Bearer ' + localStorage.getItem('token')
-        },
-        body: JSON.stringify(formData)
-      });
+      const response = await fetch(
+        "https://api.universellepeinture.com/api/Stock/PriseCompta",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: "Bearer " + localStorage.getItem("token"),
+          },
+          body: JSON.stringify(formData),
+        }
+      );
       // const data = await response.json();
       if (response.ok) {
-        alert('Balance du tier modifiée avec succès!');
+        alert("Balance du tier modifiée avec succès!");
         setFormData({
-          CodeClient: '',
-          priseCompta: ''
+          CodeClient: "",
+          priseCompta: "",
         });
       } else {
-        alert('Erreur lors de la modification de la balance du tier.');
+        alert("Erreur lors de la modification de la balance du tier.");
       }
-    }
-    catch (error) {
-      console.error('Error:', error);
-      alert('Une erreur est survenue lors de la modification de la balance.');
+    } catch (error) {
+      console.error("Error:", error);
+      alert("Une erreur est survenue lors de la modification de la balance.");
     }
   };
 
   return (
     <div className="modifier-balance-tier">
       <h1 className="page-title">Modifier Balance Tier</h1>
-      
+
       <div className="form-container">
         <div className="form-group">
           <label htmlFor="CodeClient">Code Client</label>

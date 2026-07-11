@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import {jwtDecode} from "jwt-decode";
+import { jwtDecode } from "jwt-decode";
 import "./Login.css";
 
 const Login = () => {
@@ -18,23 +18,26 @@ const Login = () => {
   const handleLogin = async (e) => {
     e.preventDefault();
     // Handle login logic here
-    // https://universellepeintre.oneposts.io/api/User/login
-    if(!identifier || !password) {
+    // https://api.universellepeinture.com/api/User/login
+    if (!identifier || !password) {
       alert("Please enter both identifier and password.");
       return;
     }
     try {
-      const response = await fetch("https://universellepeintre.oneposts.io/api/User/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          // Encoding: "utf-8", // Removed invalid header
-        },
-        body: JSON.stringify({
-          userName: identifier,
-          password: password,
-        }),
-      })
+      const response = await fetch(
+        "https://api.universellepeinture.com/api/User/login",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            // Encoding: "utf-8", // Removed invalid header
+          },
+          body: JSON.stringify({
+            userName: identifier,
+            password: password,
+          }),
+        }
+      );
       console.log("Login attempt:", { identifier, password });
       const data = await response.json();
       // const decodedToken = jwtDecode(data.accessToken);

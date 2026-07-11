@@ -14,15 +14,16 @@ const PortefeuillesCommercials = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [currentApiUrl, setCurrentApiUrl] = useState("");
 
-
   useEffect(() => {
     const refreshTokenIfNeeded = async () => {
       const currentTime = new Date().toISOString();
-  
-      if (new Date(currentTime) > new Date(localStorage.getItem("expiration"))) {
+
+      if (
+        new Date(currentTime) > new Date(localStorage.getItem("expiration"))
+      ) {
         try {
           const refreshResponse = await fetch(
-            "https://universellepeintre.oneposts.io/api/User/refresh",
+            "https://api.universellepeinture.com/api/User/refresh",
             {
               method: "POST",
               headers: {
@@ -54,9 +55,12 @@ const PortefeuillesCommercials = () => {
 
   const fetchCommercialistes = async () => {
     try {
-      console.log("token before fetching commercialistes: ", JSON.stringify(localStorage.getItem("refreshToken"),));
+      console.log(
+        "token before fetching commercialistes: ",
+        JSON.stringify(localStorage.getItem("refreshToken"))
+      );
       const response = await fetch(
-        "https://universellepeintre.oneposts.io/api/Commerces",
+        "https://api.universellepeinture.com/api/Commerces",
         {
           method: "GET",
           headers: {
@@ -80,7 +84,8 @@ const PortefeuillesCommercials = () => {
     setCurrentPdfType("Recette");
     setCurrentCommercialName(clientName);
     setCurrentCommercialId(clientId);
-    const apiUrl = "https://universellepeintre.oneposts.io/api/Commerces/GenerateRecettePdf";
+    const apiUrl =
+      "https://api.universellepeinture.com/api/Commerces/GenerateRecettePdf";
     setCurrentApiUrl(apiUrl);
     await showPdfInPopup(apiUrl, clientId);
   };
@@ -89,7 +94,8 @@ const PortefeuillesCommercials = () => {
     setCurrentPdfType("Portefeuille");
     setCurrentCommercialName(clientName);
     setCurrentCommercialId(clientId);
-    const apiUrl = "https://universellepeintre.oneposts.io/api/Commerces/GenerateRecapPdf";
+    const apiUrl =
+      "https://api.universellepeinture.com/api/Commerces/GenerateRecapPdf";
     setCurrentApiUrl(apiUrl);
     await showPdfInPopup(apiUrl, clientId);
   };
@@ -102,17 +108,20 @@ const PortefeuillesCommercials = () => {
 
     const currentTime = new Date().toISOString();
 
-    if(new Date(currentTime) > new Date(localStorage.getItem("expiration"))) {
+    if (new Date(currentTime) > new Date(localStorage.getItem("expiration"))) {
       try {
-        const refreshResponse = await fetch("https://universellepeintre.oneposts.io/api/User/refresh", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            refreshToken: localStorage.getItem("refreshToken"),
-          }),
-        });
+        const refreshResponse = await fetch(
+          "https://api.universellepeinture.com/api/User/refresh",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              refreshToken: localStorage.getItem("refreshToken"),
+            }),
+          }
+        );
         const refreshData = await refreshResponse.json();
         if (refreshResponse.ok) {
           localStorage.setItem("token", refreshData.accessToken);
@@ -239,7 +248,10 @@ const PortefeuillesCommercials = () => {
                     <button
                       className="action-btn portefeuille-btn"
                       onClick={() =>
-                        handlePortefeuille(commercialiste.id, commercialiste.nom)
+                        handlePortefeuille(
+                          commercialiste.id,
+                          commercialiste.nom
+                        )
                       }
                     >
                       Portefeuille
@@ -284,8 +296,8 @@ const PortefeuillesCommercials = () => {
               )}
             </div>
             <div className="popup-footer">
-              <button 
-                className="download-btn" 
+              <button
+                className="download-btn"
                 onClick={downloadPdf}
                 disabled={!pdfUrl || isLoading}
               >

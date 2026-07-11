@@ -40,11 +40,13 @@ const TableauCommandes = () => {
   useEffect(() => {
     const refreshTokenIfNeeded = async () => {
       const currentTime = new Date().toISOString();
-  
-      if (new Date(currentTime) > new Date(localStorage.getItem("expiration"))) {
+
+      if (
+        new Date(currentTime) > new Date(localStorage.getItem("expiration"))
+      ) {
         try {
           const refreshResponse = await fetch(
-            "https://universellepeintre.oneposts.io/api/User/refresh",
+            "https://api.universellepeinture.com/api/User/refresh",
             {
               method: "POST",
               headers: {
@@ -80,20 +82,20 @@ const TableauCommandes = () => {
       try {
         setLoading(true);
         const response = await fetch(
-          "https://universellepeintre.oneposts.io/api/Stock/Produits",
+          "https://api.universellepeinture.com/api/Stock/Produits",
           {
             method: "GET",
             headers: {
               "Content-Type": "application/json",
-              "Authorization": `Bearer ${localStorage.getItem("token")}`,
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
             },
           }
         );
-        
+
         if (!response.ok) {
           throw new Error("Failed to fetch products");
         }
-        
+
         const data = await response.json();
         setProduits(data);
         setError(null);
@@ -145,46 +147,58 @@ const TableauCommandes = () => {
         Command_date: formData.dateLivraison,
         cach: formData.cash || "0",
         StockCommanddto: [
-          formData.produit1 && formData.qte1 && {
-            NameProduit: formData.produit1,
-            Quantite: parseInt(formData.qte1),
-          },
-          formData.produit2 && formData.qte2 && {
-            NameProduit: formData.produit2,
-            Quantite: parseInt(formData.qte2),
-          },
-          formData.produit3 && formData.qte3 && {
-            NameProduit: formData.produit3,
-            Quantite: parseInt(formData.qte3),
-          },
-          formData.produit4 && formData.qte4 && {
-            NameProduit: formData.produit4,
-            Quantite: parseInt(formData.qte4),
-          },
-          formData.produit5 && formData.qte5 && {
-            NameProduit: formData.produit5,
-            Quantite: parseInt(formData.qte5),
-          },
-          formData.produit6 && formData.qte6 && {
-            NameProduit: formData.produit6,
-            Quantite: parseInt(formData.qte6),
-          },
+          formData.produit1 &&
+            formData.qte1 && {
+              NameProduit: formData.produit1,
+              Quantite: parseInt(formData.qte1),
+            },
+          formData.produit2 &&
+            formData.qte2 && {
+              NameProduit: formData.produit2,
+              Quantite: parseInt(formData.qte2),
+            },
+          formData.produit3 &&
+            formData.qte3 && {
+              NameProduit: formData.produit3,
+              Quantite: parseInt(formData.qte3),
+            },
+          formData.produit4 &&
+            formData.qte4 && {
+              NameProduit: formData.produit4,
+              Quantite: parseInt(formData.qte4),
+            },
+          formData.produit5 &&
+            formData.qte5 && {
+              NameProduit: formData.produit5,
+              Quantite: parseInt(formData.qte5),
+            },
+          formData.produit6 &&
+            formData.qte6 && {
+              NameProduit: formData.produit6,
+              Quantite: parseInt(formData.qte6),
+            },
         ].filter(Boolean),
       };
 
       const token = localStorage.getItem("token");
       const decodeToken = jwtDecode(token);
-      if(decodeToken['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] == "Admin"){
-        alert("Vous n'avez pas les droits nécessaires pour enregistrer une commande.");
+      if (
+        decodeToken[
+          "http://schemas.microsoft.com/ws/2008/06/identity/claims/role"
+        ] == "Admin"
+      ) {
+        alert(
+          "Vous n'avez pas les droits nécessaires pour enregistrer une commande."
+        );
         return;
       }
       const response = await fetch(
-        "https://universellepeintre.oneposts.io/api/Command",
+        "https://api.universellepeinture.com/api/Command",
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "Authorization": `Bearer ${localStorage.getItem("token")}`
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
           body: JSON.stringify(commandData),
         }
@@ -231,14 +245,14 @@ const TableauCommandes = () => {
       setLoading(true);
       setError(null);
       const date = new Date();
-      const formattedDate = date.toISOString().split('T')[0]; // yyyy-MM-dd
+      const formattedDate = date.toISOString().split("T")[0]; // yyyy-MM-dd
       const response = await fetch(
-        `https://universellepeintre.oneposts.io/api/Command/GenerateCommandPdf?commandDate=${formattedDate}`,
+        `https://api.universellepeinture.com/api/Command/GenerateCommandPdf?commandDate=${formattedDate}`,
         {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
-            "Authorization": `Bearer ${localStorage.getItem("token")}`
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
         }
       );
@@ -250,7 +264,7 @@ const TableauCommandes = () => {
       // Get the PDF as a blob
       const blob = await response.blob();
       const url = URL.createObjectURL(blob);
-      
+
       setPdfUrl(url);
       setShowPdfPopup(true);
     } catch (err) {
@@ -266,7 +280,7 @@ const TableauCommandes = () => {
     if (pdfUrl) {
       const link = document.createElement("a");
       link.href = pdfUrl;
-      link.download = `commandes_${new Date().toISOString().split('T')[0]}.pdf`;
+      link.download = `commandes_${new Date().toISOString().split("T")[0]}.pdf`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -336,13 +350,20 @@ const TableauCommandes = () => {
                       <div
                         key={index}
                         className="dropdown-item"
-                        onClick={() => selectProduit("produit1", produit.nom || produit.name || produit)}
+                        onClick={() =>
+                          selectProduit(
+                            "produit1",
+                            produit.nom || produit.name || produit
+                          )
+                        }
                       >
                         {produit.nom || produit.name || produit}
                       </div>
                     ))
                   ) : (
-                    <div className="dropdown-item">Aucun produit disponible</div>
+                    <div className="dropdown-item">
+                      Aucun produit disponible
+                    </div>
                   )}
                 </div>
               )}
@@ -383,13 +404,20 @@ const TableauCommandes = () => {
                       <div
                         key={index}
                         className="dropdown-item"
-                        onClick={() => selectProduit("produit2", produit.nom || produit.name || produit)}
+                        onClick={() =>
+                          selectProduit(
+                            "produit2",
+                            produit.nom || produit.name || produit
+                          )
+                        }
                       >
                         {produit.nom || produit.name || produit}
                       </div>
                     ))
                   ) : (
-                    <div className="dropdown-item">Aucun produit disponible</div>
+                    <div className="dropdown-item">
+                      Aucun produit disponible
+                    </div>
                   )}
                 </div>
               )}
@@ -430,13 +458,20 @@ const TableauCommandes = () => {
                       <div
                         key={index}
                         className="dropdown-item"
-                        onClick={() => selectProduit("produit4", produit.nom || produit.name || produit)}
+                        onClick={() =>
+                          selectProduit(
+                            "produit4",
+                            produit.nom || produit.name || produit
+                          )
+                        }
                       >
                         {produit.nom || produit.name || produit}
                       </div>
                     ))
                   ) : (
-                    <div className="dropdown-item">Aucun produit disponible</div>
+                    <div className="dropdown-item">
+                      Aucun produit disponible
+                    </div>
                   )}
                 </div>
               )}
@@ -477,13 +512,20 @@ const TableauCommandes = () => {
                       <div
                         key={index}
                         className="dropdown-item"
-                        onClick={() => selectProduit("produit5", produit.nom || produit.name || produit)}
+                        onClick={() =>
+                          selectProduit(
+                            "produit5",
+                            produit.nom || produit.name || produit
+                          )
+                        }
                       >
                         {produit.nom || produit.name || produit}
                       </div>
                     ))
                   ) : (
-                    <div className="dropdown-item">Aucun produit disponible</div>
+                    <div className="dropdown-item">
+                      Aucun produit disponible
+                    </div>
                   )}
                 </div>
               )}
@@ -524,13 +566,20 @@ const TableauCommandes = () => {
                       <div
                         key={index}
                         className="dropdown-item"
-                        onClick={() => selectProduit("produit6", produit.nom || produit.name || produit)}
+                        onClick={() =>
+                          selectProduit(
+                            "produit6",
+                            produit.nom || produit.name || produit
+                          )
+                        }
                       >
                         {produit.nom || produit.name || produit}
                       </div>
                     ))
                   ) : (
-                    <div className="dropdown-item">Aucun produit disponible</div>
+                    <div className="dropdown-item">
+                      Aucun produit disponible
+                    </div>
                   )}
                 </div>
               )}
@@ -611,7 +660,10 @@ const TableauCommandes = () => {
       {/* PDF Popup */}
       {showPdfPopup && (
         <div className="pdf-popup-overlay" onClick={closePdfPopup}>
-          <div className="pdf-popup-container" onClick={(e) => e.stopPropagation()}>
+          <div
+            className="pdf-popup-container"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="pdf-popup-header">
               <h2>Commandes PDF</h2>
               <div className="pdf-popup-actions">
@@ -633,11 +685,7 @@ const TableauCommandes = () => {
               </div>
             </div>
             <div className="pdf-popup-content">
-              <iframe
-                src={pdfUrl}
-                title="PDF Viewer"
-                className="pdf-iframe"
-              />
+              <iframe src={pdfUrl} title="PDF Viewer" className="pdf-iframe" />
             </div>
           </div>
         </div>
