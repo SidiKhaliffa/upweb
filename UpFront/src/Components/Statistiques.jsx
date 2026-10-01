@@ -1,51 +1,16 @@
 import React, { useState, useEffect } from "react";
 import "./Statistiques.css";
-import { useNavigate } from "react-router-dom";
+import { useAuth } from "../hooks/useAuth";
 
 const Statistiques = ({ authToken }) => {
-  const navigate = useNavigate();
+  const { authFetch, ensureFreshToken } = useAuth();
   const [productStats, setProductStats] = useState([]);
   const [coverageStats, setCoverageStats] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const refreshTokenIfNeeded = async () => {
-      const currentTime = new Date().toISOString();
-
-      if (
-        new Date(currentTime) > new Date(localStorage.getItem("expiration"))
-      ) {
-        try {
-          const refreshResponse = await fetch(
-            "https://api.universellepeinture.com/api/User/refresh",
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify(localStorage.getItem("refreshToken")),
-            }
-          );
-          const refreshData = await refreshResponse.json();
-          if (refreshResponse.ok) {
-            localStorage.setItem("token", refreshData.accessToken);
-            localStorage.setItem("refreshToken", refreshData.refreshToken);
-            localStorage.setItem("expiration", refreshData.expiration);
-            console.log("Token refreshed successfully");
-          } else {
-            alert("Votre session a expiré. Veuillez vous reconnecter.");
-            navigate("/login");
-            return;
-          }
-        } catch (error) {
-          console.error("Error refreshing token:", error);
-          alert("Une erreur est survenue lors du rafraîchissement du token.");
-          return;
-        }
-      }
-    };
-    refreshTokenIfNeeded();
+    ensureFreshToken();
   }, []);
 
   // Function to fetch statistics from API
@@ -54,12 +19,11 @@ const Statistiques = ({ authToken }) => {
     setError(null);
 
     try {
-      const response = await fetch(
+      const response = await authFetch(
         "https://api.universellepeinture.com/api/Statistique",
         {
           method: "GET",
           headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
             "Content-Type": "application/json",
           },
         }

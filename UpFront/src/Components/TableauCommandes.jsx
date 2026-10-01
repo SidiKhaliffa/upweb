@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react";
-import { jwtDecode } from "jwt-decode";
 import { ChevronDown, X, Download } from "lucide-react";
 import "./TableauCommandes.css";
+import { useAuth } from "../hooks/useAuth";
 
 const TableauCommandes = () => {
+  const { authFetch, ensureFreshToken, getRoleClaim } = useAuth();
   const [formData, setFormData] = useState({
     codeClient: "",
     qte1: "",
@@ -38,42 +39,7 @@ const TableauCommandes = () => {
   const [pdfUrl, setPdfUrl] = useState(null);
 
   useEffect(() => {
-    const refreshTokenIfNeeded = async () => {
-      const currentTime = new Date().toISOString();
-
-      if (
-        new Date(currentTime) > new Date(localStorage.getItem("expiration"))
-      ) {
-        try {
-          const refreshResponse = await fetch(
-            "https://api.universellepeinture.com/api/User/refresh",
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify(localStorage.getItem("refreshToken")),
-            }
-          );
-          const refreshData = await refreshResponse.json();
-          if (refreshResponse.ok) {
-            localStorage.setItem("token", refreshData.accessToken);
-            localStorage.setItem("refreshToken", refreshData.refreshToken);
-            localStorage.setItem("expiration", refreshData.expiration);
-            console.log("Token refreshed successfully");
-          } else {
-            alert("Votre session a expiré. Veuillez vous reconnecter.");
-            navigate("/login");
-            return;
-          }
-        } catch (error) {
-          console.error("Error refreshing token:", error);
-          alert("Une erreur est survenue lors du rafraîchissement du token.");
-          return;
-        }
-      }
-    };
-    refreshTokenIfNeeded();
+    ensureFreshToken();
   }, []);
 
   // Fetch products from API
@@ -81,13 +47,12 @@ const TableauCommandes = () => {
     const fetchProduits = async () => {
       try {
         setLoading(true);
-        const response = await fetch(
+        const response = await authFetch(
           "https://api.universellepeinture.com/api/Stock/Produits",
           {
             method: "GET",
             headers: {
               "Content-Type": "application/json",
-              Authorization: `Bearer ${localStorage.getItem("token")}`,
             },
           }
         );
@@ -180,25 +145,18 @@ const TableauCommandes = () => {
         ].filter(Boolean),
       };
 
-      const token = localStorage.getItem("token");
-      const decodeToken = jwtDecode(token);
-      if (
-        decodeToken[
-          "http://schemas.microsoft.com/ws/2008/06/identity/claims/role"
-        ] == "Admin"
-      ) {
+      if (getRoleClaim() == "Admin") {
         alert(
           "Vous n'avez pas les droits nécessaires pour enregistrer une commande."
         );
         return;
       }
-      const response = await fetch(
+      const response = await authFetch(
         "https://api.universellepeinture.com/api/Command",
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
           body: JSON.stringify(commandData),
         }
@@ -246,13 +204,12 @@ const TableauCommandes = () => {
       setError(null);
       const date = new Date();
       const formattedDate = date.toISOString().split("T")[0]; // yyyy-MM-dd
-      const response = await fetch(
+      const response = await authFetch(
         `https://api.universellepeinture.com/api/Command/GenerateCommandPdf?commandDate=${formattedDate}`,
         {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
         }
       );

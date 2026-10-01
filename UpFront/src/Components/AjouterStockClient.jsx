@@ -377,9 +377,8 @@
 // export default AjouterStockClient;
 
 import React, { useState, useEffect } from "react";
-import { jwtDecode } from "jwt-decode";
 import { ChevronDown } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useAuth } from "../hooks/useAuth";
 import "./AjouterStockClient.css";
 
 const API_URL = "https://api.universellepeinture.com/api/Stock/Produits";
@@ -417,7 +416,7 @@ const normalizeProduits = (raw) => {
 };
 
 const AjouterStockClient = () => {
-  const navigate = useNavigate();
+  const { authFetch, ensureFreshToken, getRoleClaim } = useAuth();
   const [formData, setFormData] = useState({
     CodeClient: "",
     Visit_date: "",
@@ -502,42 +501,7 @@ const AjouterStockClient = () => {
   };
 
   useEffect(() => {
-    const refreshTokenIfNeeded = async () => {
-      const currentTime = new Date().toISOString();
-
-      if (
-        new Date(currentTime) > new Date(localStorage.getItem("expiration"))
-      ) {
-        try {
-          const refreshResponse = await fetch(
-            "https://api.universellepeinture.com/api/User/refresh",
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify(localStorage.getItem("refreshToken")),
-            }
-          );
-          const refreshData = await refreshResponse.json();
-          if (refreshResponse.ok) {
-            localStorage.setItem("token", refreshData.accessToken);
-            localStorage.setItem("refreshToken", refreshData.refreshToken);
-            localStorage.setItem("expiration", refreshData.expiration);
-            console.log("Token refreshed successfully");
-          } else {
-            alert("Votre session a expiré. Veuillez vous reconnecter.");
-            navigate("/login");
-            return;
-          }
-        } catch (error) {
-          console.error("Error refreshing token:", error);
-          alert("Une erreur est survenue lors du rafraîchissement du token.");
-          return;
-        }
-      }
-    };
-    refreshTokenIfNeeded();
+    ensureFreshToken();
   }, []);
 
   const fetchProduits = async () => {
@@ -545,13 +509,10 @@ const AjouterStockClient = () => {
     setProduitsError(null);
 
     try {
-      const token = localStorage.getItem("token");
-      console.log("Token:", token);
-      const response = await fetch(API_URL, {
+      const response = await authFetch(API_URL, {
         method: "GET",
         headers: {
           Accept: "application/json",
-          Authorization: "Bearer " + token,
         },
       });
 
@@ -735,23 +696,16 @@ const AjouterStockClient = () => {
     console.log("Payload:", JSON.stringify(payload));
 
     try {
-      const token = localStorage.getItem("token");
-      const decodetoken = jwtDecode(token);
-      if (
-        decodetoken[
-          "http://schemas.microsoft.com/ws/2008/06/identity/claims/role"
-        ][1] == "Admin"
-      ) {
+      if (getRoleClaim()?.[1] == "Admin") {
         alert("Seuls les commerciaux peuvent ajouter du stock client.");
         return;
       }
-      const response = await fetch(
+      const response = await authFetch(
         "https://api.universellepeinture.com/api/Stock/update",
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: "Bearer " + localStorage.getItem("token"),
           },
           body: JSON.stringify(payload),
         }

@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { jwtDecode } from "jwt-decode";
 import { ChevronDown, Download, X } from "lucide-react";
 import "./SuiviFactures.css";
-import { useNavigate } from "react-router-dom";
+import { useAuth } from "../hooks/useAuth";
 
 const normalizeProduits = (raw) => {
   // Try to find an array in common payload shapes
@@ -37,7 +36,7 @@ const normalizeProduits = (raw) => {
 };
 
 const SuiviFactures = () => {
-  const navigate = useNavigate();
+  const { authFetch, ensureFreshToken, getRoleClaim } = useAuth();
   const [formData, setFormData] = useState({
     date: "",
     codeClient: "",
@@ -76,48 +75,8 @@ const SuiviFactures = () => {
   const [loadingProducts, setLoadingProducts] = useState(false);
 
   useEffect(() => {
-    const refreshTokenIfNeeded = async () => {
-      const currentTime = new Date().toISOString();
-
-      if (
-        new Date(currentTime) > new Date(localStorage.getItem("expiration"))
-      ) {
-        try {
-          const refreshResponse = await fetch(
-            "https://api.universellepeinture.com/api/User/refresh",
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify(localStorage.getItem("refreshToken")),
-            }
-          );
-          const refreshData = await refreshResponse.json();
-          if (refreshResponse.ok) {
-            localStorage.setItem("token", refreshData.accessToken);
-            localStorage.setItem("refreshToken", refreshData.refreshToken);
-            localStorage.setItem("expiration", refreshData.expiration);
-            console.log("Token refreshed successfully");
-          } else {
-            alert("Votre session a expiré. Veuillez vous reconnecter.");
-            navigate("/login");
-            return;
-          }
-        } catch (error) {
-          console.error("Error refreshing token:", error);
-          alert("Une erreur est survenue lors du rafraîchissement du token.");
-          return;
-        }
-      }
-    };
-    refreshTokenIfNeeded();
+    ensureFreshToken();
   }, []);
-
-  // Token storage (you'll need to implement your own token management)
-  const getToken = () => {
-    return localStorage.getItem("token");
-  };
 
   // Fetch products on component mount
   useEffect(() => {
@@ -126,13 +85,12 @@ const SuiviFactures = () => {
 
   const fetchProduits = async () => {
     try {
-      const response = await fetch(
+      const response = await authFetch(
         "https://api.universellepeinture.com/api/Stock/Produits",
         {
           method: "GET",
           headers: {
             Accept: "application/json",
-            Authorization: `Bearer ${getToken()}`,
           },
         }
       );
@@ -267,59 +225,18 @@ const SuiviFactures = () => {
       StockProduitdto: stockProduits,
     };
 
-    const currentTime = new Date().toISOString();
-
-    if (new Date(currentTime) > new Date(localStorage.getItem("expiration"))) {
-      try {
-        const refreshResponse = await fetch(
-          "https://api.universellepeinture.com/api/User/refresh",
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              refreshToken: localStorage.getItem("refreshToken"),
-            }),
-          }
-        );
-        const refreshData = await refreshResponse.json();
-        if (refreshResponse.ok) {
-          localStorage.setItem("token", refreshData.accessToken);
-          localStorage.setItem("refreshToken", refreshData.refreshToken);
-          localStorage.setItem("expiration", refreshData.expiration);
-          console.log("Token refreshed successfully");
-        } else {
-          alert("Votre session a expiré. Veuillez vous reconnecter.");
-          navigate("/login");
-          return;
-        }
-      } catch (error) {
-        console.error("Error refreshing token:", error);
-        alert("Une erreur est survenue lors du rafraîchissement du token.");
-        return;
-      }
-    }
-
     try {
-      const token = localStorage.getItem("token");
-      const decodedToken = jwtDecode(token);
-      if (
-        decodedToken[
-          "http://schemas.microsoft.com/ws/2008/06/identity/claims/role"
-        ] == "Admin"
-      ) {
+      if (getRoleClaim() == "Admin") {
         alert(
           "Vous n'avez pas les droits nécessaires pour ajouter une facture."
         );
         return;
       }
-      const response = await fetch(
+      const response = await authFetch(
         "https://api.universellepeinture.com/api/Facture/Add",
         {
           method: "POST",
           headers: {
-            Authorization: `Bearer ${getToken()}`,
             "Content-Type": "application/json",
           },
           body: JSON.stringify(factureData),
@@ -365,11 +282,8 @@ const SuiviFactures = () => {
     setPdfPopupOpen(true);
 
     try {
-      const response = await fetch(url, {
+      const response = await authFetch(url, {
         method: "GET",
-        headers: {
-          Authorization: `Bearer ${getToken()}`,
-        },
       });
 
       if (!response.ok) {
@@ -396,11 +310,8 @@ const SuiviFactures = () => {
     }
 
     try {
-      const response = await fetch(currentPdfUrl, {
+      const response = await authFetch(currentPdfUrl, {
         method: "GET",
-        headers: {
-          Authorization: `Bearer ${getToken()}`,
-        },
       });
 
       if (response.ok) {

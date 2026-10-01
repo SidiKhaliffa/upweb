@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from "react";
-import { jwtDecode } from "jwt-decode";
 import "./InscriptionClient.css";
-import { useNavigate } from "react-router-dom";
+import { useAuth } from "../hooks/useAuth";
 
 const InscriptionClient = () => {
-  const navigate = useNavigate();
+  const { authFetch, ensureFreshToken, getRoleClaim } = useAuth();
   const [formData, setFormData] = useState({
     code: "",
     zone: "",
@@ -16,42 +15,7 @@ const InscriptionClient = () => {
   });
 
   useEffect(() => {
-    const refreshTokenIfNeeded = async () => {
-      const currentTime = new Date().toISOString();
-
-      if (
-        new Date(currentTime) > new Date(localStorage.getItem("expiration"))
-      ) {
-        try {
-          const refreshResponse = await fetch(
-            "https://api.universellepeinture.com/api/User/refresh",
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify(localStorage.getItem("refreshToken")),
-            }
-          );
-          const refreshData = await refreshResponse.json();
-          if (refreshResponse.ok) {
-            localStorage.setItem("token", refreshData.accessToken);
-            localStorage.setItem("refreshToken", refreshData.refreshToken);
-            localStorage.setItem("expiration", refreshData.expiration);
-            console.log("Token refreshed successfully");
-          } else {
-            alert("Votre session a expiré. Veuillez vous reconnecter.");
-            navigate("/login");
-            return;
-          }
-        } catch (error) {
-          console.error("Error refreshing token:", error);
-          alert("Une erreur est survenue lors du rafraîchissement du token.");
-          return;
-        }
-      }
-    };
-    refreshTokenIfNeeded();
+    ensureFreshToken();
   }, []);
 
   const handleInputChange = (e) => {
@@ -67,23 +31,16 @@ const InscriptionClient = () => {
     // Handle form submission here
 
     try {
-      const token = localStorage.getItem("token");
-      const decodedToken = jwtDecode(token);
-      if (
-        decodedToken[
-          "http://schemas.microsoft.com/ws/2008/06/identity/claims/role"
-        ][1] == "Admin"
-      ) {
+      if (getRoleClaim()?.[1] == "Admin") {
         alert("Vous n'avez pas les droits pour inscrire un client.");
         return;
       }
-      const response = await fetch(
+      const response = await authFetch(
         "https://api.universellepeinture.com/api/Clients",
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: "Bearer " + localStorage.getItem("token"),
           },
           body: JSON.stringify(formData),
         }

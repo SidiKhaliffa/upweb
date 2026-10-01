@@ -11,6 +11,7 @@ import HistoriquesClient from '../Components/HistoriquesClient';
 import SuiviFactures from '../Components/SuiviFactures';
 import Statistiques from '../Components/Statistiques';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../hooks/useAuth';
 import './Dashboard.css';
 
 const Dashboard = () => {
@@ -18,6 +19,7 @@ const Dashboard = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const navigate = useNavigate();
+  const { logout } = useAuth();
 
   const menuItems = [
     { id: 'inscription', label: 'Inscription Client', component: InscriptionClient },
@@ -100,8 +102,7 @@ const Dashboard = () => {
 
   const handleDisconnect = () => {
     console.log('Disconnect clicked');
-    localStorage.removeItem('token');
-    navigate('/login');
+    logout();
   };
 
   return (

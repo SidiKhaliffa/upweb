@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { X, Download } from "lucide-react";
 import "./PortefeuillesCommercials.css";
-import { useNavigate } from "react-router-dom";
+import { useAuth } from "../hooks/useAuth";
 
 const PortefeuillesCommercials = () => {
-  const navigate = useNavigate();
+  const { authFetch, ensureFreshToken } = useAuth();
   const [commercialistes, setCommercialistes] = useState([]);
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [pdfUrl, setPdfUrl] = useState("");
@@ -15,62 +15,19 @@ const PortefeuillesCommercials = () => {
   const [currentApiUrl, setCurrentApiUrl] = useState("");
 
   useEffect(() => {
-    const refreshTokenIfNeeded = async () => {
-      const currentTime = new Date().toISOString();
-
-      if (
-        new Date(currentTime) > new Date(localStorage.getItem("expiration"))
-      ) {
-        try {
-          const refreshResponse = await fetch(
-            "https://api.universellepeinture.com/api/User/refresh",
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify(localStorage.getItem("refreshToken")),
-            }
-          );
-          const refreshData = await refreshResponse.json();
-          if (refreshResponse.ok) {
-            localStorage.setItem("token", refreshData.accessToken);
-            localStorage.setItem("refreshToken", refreshData.refreshToken);
-            localStorage.setItem("expiration", refreshData.expiration);
-            console.log("Token refreshed successfully");
-          } else {
-            alert("Votre session a expiré. Veuillez vous reconnecter.");
-            navigate("/login");
-            return;
-          }
-        } catch (error) {
-          console.error("Error refreshing token:", error);
-          alert("Une erreur est survenue lors du rafraîchissement du token.");
-          return;
-        }
-      }
-    };
-    refreshTokenIfNeeded();
+    ensureFreshToken();
   }, []);
 
   const fetchCommercialistes = async () => {
     try {
-      console.log(
-        "token before fetching commercialistes: ",
-        JSON.stringify(localStorage.getItem("refreshToken"))
-      );
-      const response = await fetch(
+      const response = await authFetch(
         "https://api.universellepeinture.com/api/Commerces",
         {
           method: "GET",
-          headers: {
-            Authorization: "Bearer " + localStorage.getItem("token"),
-          },
         }
       );
       const data = await response.json();
       setCommercialistes(data);
-      console.log("token Refreshhh: ", localStorage.getItem("refreshToken"));
     } catch (error) {
       console.error("Error fetching commercialistes:", error);
     }
@@ -106,46 +63,9 @@ const PortefeuillesCommercials = () => {
     setIsLoading(true);
     setPdfUrl("");
 
-    const currentTime = new Date().toISOString();
-
-    if (new Date(currentTime) > new Date(localStorage.getItem("expiration"))) {
-      try {
-        const refreshResponse = await fetch(
-          "https://api.universellepeinture.com/api/User/refresh",
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              refreshToken: localStorage.getItem("refreshToken"),
-            }),
-          }
-        );
-        const refreshData = await refreshResponse.json();
-        if (refreshResponse.ok) {
-          localStorage.setItem("token", refreshData.accessToken);
-          localStorage.setItem("refreshToken", refreshData.refreshToken);
-          localStorage.setItem("expiration", refreshData.expiration);
-          console.log("Token refreshed successfully");
-        } else {
-          alert("Votre session a expiré. Veuillez vous reconnecter.");
-          navigate("/login");
-          return;
-        }
-      } catch (error) {
-        console.error("Error refreshing token:", error);
-        alert("Une erreur est survenue lors du rafraîchissement du token.");
-        return;
-      }
-    }
-
     try {
-      const response = await fetch(urlWithId, {
+      const response = await authFetch(urlWithId, {
         method: "GET",
-        headers: {
-          Authorization: "Bearer " + localStorage.getItem("token"),
-        },
       });
 
       if (response.ok) {
