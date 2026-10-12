@@ -818,7 +818,7 @@ const AjouterStockClient = () => {
             <div className="form-group">
               <label htmlFor="quantite1">Quantité 1*</label>
               <input
-                type="number"
+                type="text"
                 id="quantite1"
                 name="quantite1"
                 value={formData.quantite1}
@@ -835,7 +835,7 @@ const AjouterStockClient = () => {
             <div className="form-group">
               <label htmlFor="quantite2">Quantité 2</label>
               <input
-                type="number"
+                type="text"
                 id="quantite2"
                 name="quantite2"
                 value={formData.quantite2}
@@ -854,7 +854,7 @@ const AjouterStockClient = () => {
             <div className="form-group">
               <label htmlFor="quantite3">Quantité 3</label>
               <input
-                type="number"
+                type="text"
                 id="quantite3"
                 name="quantite3"
                 value={formData.quantite3}
@@ -871,7 +871,7 @@ const AjouterStockClient = () => {
             <div className="form-group">
               <label htmlFor="quantite4">Quantité 4</label>
               <input
-                type="number"
+                type="text"
                 id="quantite4"
                 name="quantite4"
                 value={formData.quantite4}
@@ -890,7 +890,7 @@ const AjouterStockClient = () => {
             <div className="form-group">
               <label htmlFor="quantite5">Quantité 5</label>
               <input
-                type="number"
+                type="text"
                 id="quantite5"
                 name="quantite5"
                 value={formData.quantite5}
@@ -906,7 +906,7 @@ const AjouterStockClient = () => {
             <div className="form-group">
               <label htmlFor="quantite6">Quantité 6</label>
               <input
-                type="number"
+                type="text"
                 id="quantite6"
                 name="quantite6"
                 value={formData.quantite6}
