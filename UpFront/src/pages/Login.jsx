@@ -46,7 +46,7 @@ const Login = () => {
         navigate("/dashboard", { state: { loginSuccess: true } });
       } else {
         setError(
-          data.message || "Identifiant ou mot de passe incorrect."
+          "Identifiant ou mot de passe incorrect."
         );
       }
     } catch (error) {
