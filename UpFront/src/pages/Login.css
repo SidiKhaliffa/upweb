@@ -114,6 +114,18 @@
   .login-form {
     margin-bottom: 20px;
   }
+
+  .login-error-message {
+    background-color: #fee;
+    border-left: 4px solid #f44;
+    color: #c33;
+    padding: 15px;
+    margin-bottom: 20px;
+    border-radius: 4px;
+    font-weight: 500;
+    font-size: 14px;
+    text-align: left;
+  }
   
   .input-group {
     margin-bottom: 20px;

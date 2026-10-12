@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { jwtDecode } from "jwt-decode";
 import "./Login.css";
 
 const Login = () => {
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -17,10 +17,10 @@ const Login = () => {
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    // Handle login logic here
-    // https://api.universellepeinture.com/api/User/login
+    setError("");
+
     if (!identifier || !password) {
-      alert("Please enter both identifier and password.");
+      setError("Veuillez entrer votre identifiant et votre mot de passe.");
       return;
     }
     try {
@@ -30,7 +30,6 @@ const Login = () => {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            // Encoding: "utf-8", // Removed invalid header
           },
           body: JSON.stringify({
             userName: identifier,
@@ -38,27 +37,22 @@ const Login = () => {
           }),
         }
       );
-      console.log("Login attempt:", { identifier, password });
       const data = await response.json();
-      // const decodedToken = jwtDecode(data.accessToken);
-      // console.log("Response data:", decodedToken['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'][1]);
       if (response.ok) {
-        // Assuming the response contains a token and user info
-        console.log("Login successful:", data);
         localStorage.setItem("token", data.accessToken);
         localStorage.setItem("refreshToken", data.refreshToken);
         localStorage.setItem("expiration", data.expiration);
         localStorage.setItem("user", JSON.stringify(data.user));
-        alert("Connection reussite!!!");
-        navigate("/dashboard");
+        navigate("/dashboard", { state: { loginSuccess: true } });
       } else {
-        alert(data.message || "Login failed. Please check your credentials.");
+        setError(
+          data.message || "Identifiant ou mot de passe incorrect."
+        );
       }
     } catch (error) {
       console.error("Error:", error);
-      alert("An error occurred during login.");
+      setError("Une erreur est survenue lors de la connexion.");
     }
-    // navigate("/dashboard");
   };
 
   const handleCreateAccount = () => {
@@ -92,12 +86,17 @@ const Login = () => {
 
         {/* Form Section */}
         <div className="login-form">
+          {error && <div className="login-error-message">{error}</div>}
+
           <div className="input-group">
             <input
               type="text"
               placeholder="Enter Identifiant"
               value={identifier}
-              onChange={(e) => setIdentifier(e.target.value)}
+              onChange={(e) => {
+                setIdentifier(e.target.value);
+                if (error) setError("");
+              }}
               className="login-input"
             />
           </div>
@@ -107,7 +106,10 @@ const Login = () => {
               type="password"
               placeholder="Enter Mots de Passe"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                if (error) setError("");
+              }}
               className="login-input"
             />
           </div>

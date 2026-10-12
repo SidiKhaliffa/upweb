@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Bell, LogOut, Menu, X } from 'lucide-react';
+import { Bell, CheckCircle, LogOut, Menu, X } from 'lucide-react';
 import InscriptionClient from '../Components/InscriptionClient';
 import TableauCommandes from '../Components/TableauCommandes';
 import PortefeuillesCommercials from '../Components/PortefeuillesCommercials';
@@ -10,7 +10,7 @@ import RecetteHistorique from '../Components/RecetteHistorique';
 import HistoriquesClient from '../Components/HistoriquesClient';
 import SuiviFactures from '../Components/SuiviFactures';
 import Statistiques from '../Components/Statistiques';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import './Dashboard.css';
 
@@ -18,7 +18,9 @@ const Dashboard = () => {
   const [activeMenuItem, setActiveMenuItem] = useState('');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [showLoginSuccess, setShowLoginSuccess] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
   const { logout } = useAuth();
 
   const menuItems = [
@@ -38,6 +40,17 @@ const Dashboard = () => {
     const token = localStorage.getItem('token');
     if (!token) {
       navigate('/login');
+    }
+  }, []);
+
+  // Show a success banner after a successful login, then clear it so it
+  // doesn't reappear on refresh or when navigating back to the dashboard.
+  useEffect(() => {
+    if (location.state?.loginSuccess) {
+      setShowLoginSuccess(true);
+      navigate(location.pathname, { replace: true, state: {} });
+      const timer = setTimeout(() => setShowLoginSuccess(false), 4000);
+      return () => clearTimeout(timer);
     }
   }, []);
 
@@ -176,6 +189,20 @@ const Dashboard = () => {
 
         {/* Content Area */}
         <main className="content">
+          {showLoginSuccess && (
+            <div className="login-success-banner">
+              <CheckCircle size={20} />
+              <span>Connexion réussie ! Bienvenue.</span>
+              <button
+                className="login-success-close"
+                onClick={() => setShowLoginSuccess(false)}
+                aria-label="Fermer"
+              >
+                <X size={16} />
+              </button>
+            </div>
+          )}
+
           <div className="content-placeholder">
             {activeMenuItem ? (
               <div className="active-content">
