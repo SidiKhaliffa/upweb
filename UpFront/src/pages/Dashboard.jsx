@@ -10,6 +10,7 @@ import RecetteHistorique from '../Components/RecetteHistorique';
 import HistoriquesClient from '../Components/HistoriquesClient';
 import SuiviFactures from '../Components/SuiviFactures';
 import Statistiques from '../Components/Statistiques';
+import Peintres from '../Components/Peintres';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import './Dashboard.css';
@@ -33,7 +34,8 @@ const Dashboard = () => {
     { id: 'historique-recette', label: 'Historique du Recette', component: RecetteHistorique },
     { id: 'historique', label: 'Historique', component: HistoriquesClient },
     { id: 'ajout', label: 'Ajout de Factures', component: SuiviFactures },
-    { id: 'statistiques', label: 'Statistiques', component: Statistiques }
+    { id: 'statistiques', label: 'Statistiques', component: Statistiques },
+    { id: 'peintres', label: 'Peintres', component: Peintres }
   ];
 
   useEffect(() => {
