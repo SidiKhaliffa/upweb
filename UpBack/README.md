@@ -13,25 +13,40 @@ Backend Express/Node.js destiné à remplacer le backend .NET existant
 | Vérification des mots de passe ASP.NET Identity (format V3, PBKDF2) | ✅ implémenté — tous les hash de `AspNetUsers` sont en V3 (SHA256/SHA512) |
 | `POST /api/User/login`, `POST /api/User/refresh` | ✅ branchés sur `AspNetUsers` / `AspNetUserRoles` / `RefreshTokens` — à tester avec un vrai compte |
 | `GET/POST /api/Peintres` (nouvelle table `Peintres`, voir `sql/001_create_peintres.sql`) | ✅ fonctionnel — n'existe que sur UpBack |
-| Toutes les autres routes (Stock, Command, Clients, Historique, Facture, Commerces, Statistique) | 🚧 stubs `501 Not Implemented` — routing + auth corrects, logique DB à écrire |
+| Stock, Clients, Historique, Facture, Command, Commerces, Statistique | ✅ toutes les routes utilisées par UpFront, logique reprise du backend .NET |
+| PDF (commandes, factures, recette, récap) | ✅ générés avec `pdfmake`, même mise en page que les PDF QuestPDF du .NET |
 
-## Pourquoi des stubs plutôt que du code "au hasard"
+## Différences volontaires avec le backend .NET
 
-Deviner les noms de tables/colonnes pour 13 endpoints sans voir le schéma
-réel aurait créé une fausse impression d'avancement, avec un risque élevé
-de tout réécrire une fois la vraie base consultée. Les stubs gardent le
-bon contrat d'API (mêmes chemins, mêmes méthodes, même auth) pendant qu'on
-attend l'accès au schéma ou au code .NET.
+Le comportement métier du .NET est conservé, sauf ses failles et bugs :
 
-## Ce qu'il faut pour débloquer la suite
-
-1. **Logique métier des routes restantes** — le schéma MySQL est
-   maintenant connu (connexion via `.env`), mais le comportement exact
-   de chaque endpoint .NET reste à reproduire.
-2. **Lib PDF utilisée côté .NET** (iTextSharp, QuestPDF, Rotativa...) pour
-   les 4 endpoints de génération de PDF (`Command/GenerateCommandPdf`,
-   `Facture/GenerateFacturePdf`, `Commerces/GenerateRecettePdf`,
-   `Commerces/GenerateRecapPdf`).
+- **Toutes les routes exigent un token.** Les routes .NET sans protection
+  ne sont pas reprises : `DELETE` qui vidaient des tables entières
+  (stocks, factures, historiques, recettes, portefeuilles, produits),
+  `ChangePasswordWithoutCurrent`, `Register`, `GetAllUsers`,
+  `DeleteCommercial`, `UpdatePhoneNumber`, `deleteClient`.
+- **Erreurs** : les messages techniques (SQL, exceptions) ne sont plus
+  renvoyés au client, seulement journalisés.
+- **Transactions** : chaque opération (facture, stock, recette...)
+  s'enregistre entièrement ou pas du tout, avec verrouillage des lignes
+  du client pour éviter les écrasements simultanés.
+- **Produit inconnu** : refusé (400) au lieu d'être ignoré en silence.
+- **Recette en double** le même jour : refusée (409) au lieu de répondre
+  « succès » sans rien enregistrer.
+- **Modifier stock** : le montant à payer est recalculé
+  (`balance − valeur du stock`) au lieu de s'additionner à chaque visite.
+- **Facture** : les lignes d'historique sont datées de la facture (le .NET
+  les datait du 01/01/0001) et le montant à payer suit la balance.
+- **Commande** : le poids total utilise le poids du produit (le .NET
+  multipliait par un poids jamais envoyé, donc toujours 0).
+- **Inscription client** : la société et les coordonnées GPS envoyées par
+  UpFront (`nomSociete`, `coordonneesGPS`) sont enregistrées.
+- **PDF recette et récap** : limités aux clients du commercial demandé
+  (le .NET mélangeait ceux de tous les commerciaux).
+- **Statistiques** : pourcentages calculés à partir du stock réel ;
+  couverture « Mauritanie » = zones / 30, plafonnée à 100 % (le .NET
+  utilisait une valeur interne sans rapport).
+- **Token d'accès** : 30 minutes, comme le .NET.
 
 ## Démarrer en local
 

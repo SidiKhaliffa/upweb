@@ -15,7 +15,9 @@ import peintresRoutes from "./routes/peintres.routes.js";
 
 const app = express();
 
-app.use(cors());
+// Content-Disposition is exposed so UpFront can save PDFs under the name
+// the server gives them.
+app.use(cors({ exposedHeaders: ["Content-Disposition"] }));
 // strict: false because UpFront posts the refresh token to
 // /api/User/refresh as a bare JSON string, which strict mode rejects.
 app.use(express.json({ strict: false }));

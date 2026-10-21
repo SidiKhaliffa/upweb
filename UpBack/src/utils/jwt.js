@@ -33,7 +33,7 @@ export function signAccessToken(user) {
     },
     process.env.JWT_ACCESS_SECRET,
     {
-      expiresIn: process.env.JWT_ACCESS_EXPIRES_IN || "1h",
+      expiresIn: process.env.JWT_ACCESS_EXPIRES_IN || "30m",
       // Same secret/issuer/audience as the .NET backend's "JWT" settings,
       // so tokens from either backend are accepted by the other.
       ...(process.env.JWT_ISSUER && { issuer: process.env.JWT_ISSUER }),
