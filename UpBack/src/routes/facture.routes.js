@@ -33,8 +33,9 @@ const router = Router();
 
 router.use(requireAuth);
 
-// A delivery invoiced to the client: raises the client's balance and the
-// products' stock, and logs each product in the client's historique.
+// A facture raises the client's balance by its amount and the products'
+// stock fabriqué by their quantities, and logs each product in the
+// client's historique. The stock actuel only changes at a visit.
 router.post("/Add", async (req, res, next) => {
   try {
     const code = requireText(req.body?.CodeClient, "Le code client est obligatoire.");
@@ -74,8 +75,8 @@ router.post("/Add", async (req, res, next) => {
       for (const { name, quantity } of lines) {
         const produit = findProduit(produits, name);
         await conn.query(
-          "UPDATE Produits SET StockActuel = StockActuel + ?, stock = stock + ? WHERE Id = ?",
-          [quantity, quantity, produit.Id]
+          "UPDATE Produits SET stock = stock + ? WHERE Id = ?",
+          [quantity, produit.Id]
         );
         // .NET never set Delivery_date here, so every historique line was
         // dated 01/01/0001. The facture date is the delivery date.

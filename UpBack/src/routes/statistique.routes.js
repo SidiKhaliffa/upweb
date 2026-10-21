@@ -1,6 +1,7 @@
 import { Router } from "express";
 import pool from "../config/db.js";
 import { requireAuth } from "../middleware/auth.js";
+import { STOCK_ACTUEL_SQL } from "../utils/business.js";
 
 const router = Router();
 
@@ -17,12 +18,13 @@ const round2 = (value) => Math.round(value * 100) / 100;
 router.get("/", requireAuth, async (req, res, next) => {
   try {
     const [produits] = await pool.query(
-      "SELECT Name, stock, StockActuel, PrixActuel FROM Produits ORDER BY Id"
+      `SELECT p.Name, p.stock, ${STOCK_ACTUEL_SQL} AS StockActuel, p.PrixActuel
+       FROM Produits p ORDER BY p.Id`
     );
     const totalStock = produits.reduce((sum, p) => sum + p.stock, 0);
 
-    // Percentages are computed live from the stock columns instead of
-    // read from the stored ones, which .NET left stale after stock updates.
+    // Stock actuel and percentages are computed live instead of read from
+    // the stored columns, which .NET left stale after stock updates.
     const statistiquProduits = produits.map((p) => {
       const vendu = p.stock - p.StockActuel;
       return {

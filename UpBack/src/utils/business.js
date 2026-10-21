@@ -78,7 +78,15 @@ export function parseProductLines(lines, field = "StockProduitdto") {
 // Recomputes the stored percentages of every product from its current
 // stock. .NET only refreshed them on factures, so stock updates left them
 // stale; Statistique computes them live anyway.
+// Stock actuel = what is left on the clients' shelves, as counted at the
+// last visit of each client. It is recomputed from StockProduits instead
+// of being moved by +/- on each operation: that counter drifted and ended
+// up above the stock fabriqué for some products.
+export const STOCK_ACTUEL_SQL =
+  "COALESCE((SELECT SUM(sp.Quantite) FROM StockProduits sp WHERE sp.ProduitId = p.Id), 0)";
+
 export async function refreshProduitPercentages(conn) {
+  await conn.query(`UPDATE Produits p SET p.StockActuel = ${STOCK_ACTUEL_SQL}`);
   await conn.query(
     `UPDATE Produits p
      CROSS JOIN (SELECT SUM(stock) AS total FROM Produits) t

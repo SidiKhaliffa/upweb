@@ -83,11 +83,6 @@ router.post("/update", async (req, res, next) => {
         const value = produit.PrixActuel * quantity;
         const current = existing.get(produit.Id);
         if (current) {
-          // Whatever left the client's shelf since the last visit was sold.
-          await conn.query(
-            "UPDATE Produits SET StockActuel = StockActuel - ? WHERE Id = ?",
-            [current.Quantite - quantity, produit.Id]
-          );
           await conn.query(
             "UPDATE StockProduits SET Quantite = ?, prix_actuell = ? WHERE StockId = ? AND ProduitId = ?",
             [quantity, value, stockId, produit.Id]
@@ -117,6 +112,7 @@ router.post("/update", async (req, res, next) => {
         [visitDate, description, stockValue, stockValue, code]
       );
 
+      // Also recomputes Produits.StockActuel from the new counts.
       await refreshProduitPercentages(conn);
     });
 
