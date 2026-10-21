@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import "./InscriptionClient.css";
 import { useAuth } from "../hooks/useAuth";
+import { API_BASE } from "../config";
 
 const InscriptionClient = () => {
   const { authFetch, ensureFreshToken, getRoleClaim } = useAuth();
@@ -36,7 +37,7 @@ const InscriptionClient = () => {
         return;
       }
       const response = await authFetch(
-        "https://api.universellepeinture.com/api/Clients",
+        `${API_BASE}/Clients`,
         {
           method: "POST",
           headers: {

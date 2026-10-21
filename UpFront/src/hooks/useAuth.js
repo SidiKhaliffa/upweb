@@ -1,9 +1,69 @@
 import { useNavigate } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
+import { API_BASE } from "../config";
 
-const API_BASE = "https://api.universellepeinture.com/api";
 const ROLE_CLAIM =
   "http://schemas.microsoft.com/ws/2008/06/identity/claims/role";
+
+// Refresh a little before the real expiry, so a token can't expire while
+// a request is on its way to the server.
+const EXPIRY_MARGIN_MS = 60 * 1000;
+
+const isTokenFresh = () => {
+  const expiration = localStorage.getItem("expiration");
+  return (
+    Boolean(localStorage.getItem("token")) &&
+    Boolean(expiration) &&
+    Date.now() < new Date(expiration).getTime() - EXPIRY_MARGIN_MS
+  );
+};
+
+class SessionExpiredError extends Error {}
+
+// The server revokes a refresh token as soon as it is used. When several
+// requests found the token expired at once, each one used to refresh with
+// the same refresh token: the first succeeded and the others were refused,
+// which logged the user out. All callers now share one refresh.
+let refreshInFlight = null;
+
+async function refreshTokens() {
+  const usedRefreshToken = localStorage.getItem("refreshToken");
+  if (!usedRefreshToken) throw new SessionExpiredError();
+
+  const response = await fetch(`${API_BASE}/User/refresh`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(usedRefreshToken),
+  });
+
+  if (!response.ok) {
+    // Another tab may have refreshed with the same token a moment ago:
+    // its new tokens are already in localStorage.
+    if (localStorage.getItem("refreshToken") !== usedRefreshToken && isTokenFresh()) {
+      return localStorage.getItem("token");
+    }
+    if (response.status === 400 || response.status === 401) {
+      throw new SessionExpiredError();
+    }
+    // Server or network trouble: keep the session, the next call retries.
+    throw new Error(`Refresh failed with status ${response.status}`);
+  }
+
+  const data = await response.json();
+  localStorage.setItem("token", data.accessToken);
+  localStorage.setItem("refreshToken", data.refreshToken);
+  localStorage.setItem("expiration", data.expiration);
+  return data.accessToken;
+}
+
+function sharedRefresh() {
+  if (!refreshInFlight) {
+    refreshInFlight = refreshTokens().finally(() => {
+      refreshInFlight = null;
+    });
+  }
+  return refreshInFlight;
+}
 
 export const useAuth = () => {
   const navigate = useNavigate();
@@ -16,51 +76,50 @@ export const useAuth = () => {
     navigate("/login");
   };
 
-  // Refreshes the access token if it has expired. Returns the current
-  // (possibly refreshed) access token, or null if the session is gone.
-  const ensureFreshToken = async () => {
-    const expiration = localStorage.getItem("expiration");
-    if (expiration && new Date() <= new Date(expiration)) {
+  // Returns a valid access token, refreshing it first if it is about to
+  // expire. Returns null, and logs out, only when the session is really
+  // over (refresh token expired or revoked).
+  const ensureFreshToken = async ({ force = false } = {}) => {
+    if (!force && isTokenFresh()) {
       return localStorage.getItem("token");
     }
-
     try {
-      const refreshResponse = await fetch(`${API_BASE}/User/refresh`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(localStorage.getItem("refreshToken")),
-      });
-      const refreshData = await refreshResponse.json();
-
-      if (!refreshResponse.ok) {
-        alert("Votre session a expiré. Veuillez vous reconnecter.");
-        logout();
+      return await sharedRefresh();
+    } catch (error) {
+      if (error instanceof SessionExpiredError) {
+        // Several callers can land here together: warn only once.
+        if (localStorage.getItem("token")) {
+          alert("Votre session a expiré. Veuillez vous reconnecter.");
+          logout();
+        }
         return null;
       }
-
-      localStorage.setItem("token", refreshData.accessToken);
-      localStorage.setItem("refreshToken", refreshData.refreshToken);
-      localStorage.setItem("expiration", refreshData.expiration);
-      console.log("Token refreshed successfully");
-      return refreshData.accessToken;
-    } catch (error) {
       console.error("Error refreshing token:", error);
-      alert("Une erreur est survenue lors du rafraîchissement du token.");
-      return null;
+      // Keep the current token: the request may still go through, and the
+      // next call tries the refresh again.
+      return localStorage.getItem("token");
     }
   };
 
   // fetch() wrapper that refreshes the token first if needed, then attaches
-  // the Authorization header automatically.
+  // the Authorization header. A 401 (token revoked or expired server-side)
+  // triggers one refresh and one retry.
   const authFetch = async (url, options = {}) => {
+    const send = (token) =>
+      fetch(url, {
+        ...options,
+        headers: {
+          ...(options.headers || {}),
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
     const token = await ensureFreshToken();
-    return fetch(url, {
-      ...options,
-      headers: {
-        ...(options.headers || {}),
-        Authorization: `Bearer ${token}`,
-      },
-    });
+    const response = await send(token);
+    if (response.status !== 401 || !token) return response;
+
+    const newToken = await ensureFreshToken({ force: true });
+    return newToken ? send(newToken) : response;
   };
 
   const getDecodedToken = () => {

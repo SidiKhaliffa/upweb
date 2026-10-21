@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import { Calendar } from "lucide-react";
 import "./RecetteHistorique.css";
 import { useAuth } from "../hooks/useAuth";
+import { API_BASE } from "../config";
+import { formatAmount } from "../utils/format";
 
 const RecetteHistorique = () => {
   const { authFetch, ensureFreshToken } = useAuth();
@@ -48,7 +50,7 @@ const RecetteHistorique = () => {
       const formattedDate = new Date(selectedDate).toISOString().split("T")[0];
 
       // Construct URL with date parameter (matching C# logic)
-      const url = `https://api.universellepeinture.com/api/Stock/RecetteHistorique?date=${formattedDate}`;
+      const url = `${API_BASE}/Stock/RecetteHistorique?date=${formattedDate}`;
 
       // Make GET request with Authorization header
       const response = await authFetch(url, {
@@ -141,12 +143,6 @@ const RecetteHistorique = () => {
     }
   };
 
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat("fr-FR", {
-      style: "currency",
-      currency: "EUR",
-    }).format(amount);
-  };
 
   return (
     <div className="recette-historique">
@@ -220,7 +216,7 @@ const RecetteHistorique = () => {
                       <td className="date">{formatDate(item.date)}</td>
                       <td className="nom">{item.name}</td>
                       <td className="code-client">{item.codeClient}</td>
-                      <td className="recette">{item.recette} MRU</td>
+                      <td className="recette">{formatAmount(item.recette)}</td>
                     </tr>
                   ))
                 ) : (
@@ -239,11 +235,12 @@ const RecetteHistorique = () => {
               <div className="summary-card">
                 <h3>Total des recettes</h3>
                 <div className="summary-value">
-                  {searchResults.reduce(
-                    (sum, item) => sum + (item.recette || 0),
-                    0
-                  )}{" "}
-                  MRU
+                  {formatAmount(
+                    searchResults.reduce(
+                      (sum, item) => sum + (item.recette || 0),
+                      0
+                    )
+                  )}
                 </div>
               </div>
               <div className="summary-card">

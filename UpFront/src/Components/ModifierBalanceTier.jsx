@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import "./ModifierBalanceTier.css";
 import { useAuth } from "../hooks/useAuth";
+import { API_BASE } from "../config";
 
 const ModifierBalanceTier = () => {
   const { authFetch, ensureFreshToken, getRoleClaim } = useAuth();
@@ -32,7 +33,7 @@ const ModifierBalanceTier = () => {
         return;
       }
       const response = await authFetch(
-        "https://api.universellepeinture.com/api/Stock/PriseCompta",
+        `${API_BASE}/Stock/PriseCompta`,
         {
           method: "POST",
           headers: {

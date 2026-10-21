@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import "./HistoriquesClient.css";
 import { useAuth } from "../hooks/useAuth";
+import { API_BASE } from "../config";
+import { formatAmount, formatNumber } from "../utils/format";
 
 const HistoriquesClient = ({ authToken }) => {
   const { authFetch, ensureFreshToken } = useAuth();
@@ -36,7 +38,7 @@ const HistoriquesClient = ({ authToken }) => {
 
     try {
       const response = await authFetch(
-        `https://api.universellepeinture.com/api/Historique?codeclient=${formData.codeClient}`,
+        `${API_BASE}/Historique?codeclient=${formData.codeClient}`,
         {
           method: "GET",
           headers: {
@@ -154,8 +156,8 @@ const HistoriquesClient = ({ authToken }) => {
                   searchResults.map((item, index) => (
                     <tr key={index}>
                       <td className="product-name">{item.produit}</td>
-                      <td className="quantity">{item.quantite}</td>
-                      <td className="amount">{item.montant}</td>
+                      <td className="quantity">{formatNumber(item.quantite)}</td>
+                      <td className="amount">{formatAmount(item.montant)}</td>
                       <td className="date">{formatDate(item.date)}</td>
                     </tr>
                   ))

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { API_BASE } from "../config";
 import "./Login.css";
 
 const Login = () => {
@@ -25,7 +26,7 @@ const Login = () => {
     }
     try {
       const response = await fetch(
-        "https://api.universellepeinture.com/api/User/login",
+        `${API_BASE}/User/login`,
         {
           method: "POST",
           headers: {

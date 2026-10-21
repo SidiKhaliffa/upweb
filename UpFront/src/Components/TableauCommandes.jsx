@@ -1,7 +1,9 @@
-import React, { useState, useEffect } from "react";
-import { ChevronDown, X, Download } from "lucide-react";
+import React, { useState, useEffect, useCallback } from "react";
+import { ChevronDown } from "lucide-react";
 import "./TableauCommandes.css";
 import { useAuth } from "../hooks/useAuth";
+import { API_BASE } from "../config";
+import PdfViewer from "./PdfViewer";
 
 const TableauCommandes = () => {
   const { authFetch, ensureFreshToken, getRoleClaim } = useAuth();
@@ -35,8 +37,8 @@ const TableauCommandes = () => {
   const [produits, setProduits] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [showPdfPopup, setShowPdfPopup] = useState(false);
-  const [pdfUrl, setPdfUrl] = useState(null);
+  const [pdf, setPdf] = useState(null);
+  const closePdf = useCallback(() => setPdf(null), []);
 
   useEffect(() => {
     ensureFreshToken();
@@ -48,7 +50,7 @@ const TableauCommandes = () => {
       try {
         setLoading(true);
         const response = await authFetch(
-          "https://api.universellepeinture.com/api/Stock/Produits",
+          `${API_BASE}/Stock/Produits`,
           {
             method: "GET",
             headers: {
@@ -152,7 +154,7 @@ const TableauCommandes = () => {
         return;
       }
       const response = await authFetch(
-        "https://api.universellepeinture.com/api/Command",
+        `${API_BASE}/Command`,
         {
           method: "POST",
           headers: {
@@ -198,59 +200,13 @@ const TableauCommandes = () => {
     }
   };
 
-  const handleGenererCommandes = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const date = new Date();
-      const formattedDate = date.toISOString().split("T")[0]; // yyyy-MM-dd
-      const response = await authFetch(
-        `https://api.universellepeinture.com/api/Command/GenerateCommandPdf?commandDate=${formattedDate}`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error("Failed to generate PDF");
-      }
-
-      // Get the PDF as a blob
-      const blob = await response.blob();
-      const url = URL.createObjectURL(blob);
-
-      setPdfUrl(url);
-      setShowPdfPopup(true);
-    } catch (err) {
-      setError("Erreur lors de la génération du PDF");
-      console.error("Error generating PDF:", err);
-      alert("Erreur lors de la génération du PDF");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleDownloadPdf = () => {
-    if (pdfUrl) {
-      const link = document.createElement("a");
-      link.href = pdfUrl;
-      link.download = `commandes_${new Date().toISOString().split("T")[0]}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    }
-  };
-
-  const closePdfPopup = () => {
-    setShowPdfPopup(false);
-    if (pdfUrl) {
-      URL.revokeObjectURL(pdfUrl);
-      setPdfUrl(null);
-    }
-  };
+  const handleGenererCommandes = () =>
+    setPdf({
+      title: "Tableau de commandes",
+      urlForDate: (date) =>
+        `${API_BASE}/Command/GenerateCommandPdf?commandDate=${date}`,
+      fileNameForDate: (date) => `commandes_${date}.pdf`,
+    });
 
   return (
     <div className="tableau-commandes">
@@ -609,44 +565,12 @@ const TableauCommandes = () => {
             className="generate-btn"
             disabled={loading}
           >
-            {loading ? "Génération..." : "Générer les commandes"}
+            Générer les commandes
           </button>
         </div>
       </div>
 
-      {/* PDF Popup */}
-      {showPdfPopup && (
-        <div className="pdf-popup-overlay" onClick={closePdfPopup}>
-          <div
-            className="pdf-popup-container"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="pdf-popup-header">
-              <h2>Commandes PDF</h2>
-              <div className="pdf-popup-actions">
-                <button
-                  onClick={handleDownloadPdf}
-                  className="download-pdf-btn"
-                  title="Télécharger"
-                >
-                  <Download size={20} />
-                  Télécharger
-                </button>
-                <button
-                  onClick={closePdfPopup}
-                  className="close-popup-btn"
-                  title="Fermer"
-                >
-                  <X size={24} />
-                </button>
-              </div>
-            </div>
-            <div className="pdf-popup-content">
-              <iframe src={pdfUrl} title="PDF Viewer" className="pdf-iframe" />
-            </div>
-          </div>
-        </div>
-      )}
+      <PdfViewer pdf={pdf} onClose={closePdf} />
     </div>
   );
 };

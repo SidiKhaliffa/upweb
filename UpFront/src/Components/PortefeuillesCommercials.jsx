@@ -1,18 +1,14 @@
-import React, { useState, useEffect } from "react";
-import { X, Download } from "lucide-react";
+import React, { useState, useEffect, useCallback } from "react";
 import "./PortefeuillesCommercials.css";
 import { useAuth } from "../hooks/useAuth";
+import { API_BASE } from "../config";
+import PdfViewer from "./PdfViewer";
 
 const PortefeuillesCommercials = () => {
   const { authFetch, ensureFreshToken } = useAuth();
   const [commercialistes, setCommercialistes] = useState([]);
-  const [isPopupOpen, setIsPopupOpen] = useState(false);
-  const [pdfUrl, setPdfUrl] = useState("");
-  const [currentPdfType, setCurrentPdfType] = useState("");
-  const [currentCommercialName, setCurrentCommercialName] = useState("");
-  const [currentCommercialId, setCurrentCommercialId] = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [currentApiUrl, setCurrentApiUrl] = useState("");
+  const [pdf, setPdf] = useState(null);
+  const closePdf = useCallback(() => setPdf(null), []);
 
   useEffect(() => {
     ensureFreshToken();
@@ -21,7 +17,7 @@ const PortefeuillesCommercials = () => {
   const fetchCommercialistes = async () => {
     try {
       const response = await authFetch(
-        "https://api.universellepeinture.com/api/Commerces",
+        `${API_BASE}/Commerces`,
         {
           method: "GET",
         }
@@ -37,105 +33,19 @@ const PortefeuillesCommercials = () => {
     fetchCommercialistes();
   }, []);
 
-  const handleRecette = async (clientId, clientName) => {
-    setCurrentPdfType("Recette");
-    setCurrentCommercialName(clientName);
-    setCurrentCommercialId(clientId);
-    const apiUrl =
-      "https://api.universellepeinture.com/api/Commerces/GenerateRecettePdf";
-    setCurrentApiUrl(apiUrl);
-    await showPdfInPopup(apiUrl, clientId);
-  };
+  const handleRecette = (id, nom) =>
+    setPdf({
+      title: `Recette – ${nom}`,
+      url: `${API_BASE}/Commerces/GenerateRecettePdf?idcomerce=${id}`,
+      fileName: `Recette_${nom}.pdf`,
+    });
 
-  const handlePortefeuille = async (clientId, clientName) => {
-    setCurrentPdfType("Portefeuille");
-    setCurrentCommercialName(clientName);
-    setCurrentCommercialId(clientId);
-    const apiUrl =
-      "https://api.universellepeinture.com/api/Commerces/GenerateRecapPdf";
-    setCurrentApiUrl(apiUrl);
-    await showPdfInPopup(apiUrl, clientId);
-  };
-
-  const showPdfInPopup = async (fileUrl, id) => {
-    const urlWithId = `${fileUrl}?idcomerce=${id}`;
-    setIsPopupOpen(true);
-    setIsLoading(true);
-    setPdfUrl("");
-
-    try {
-      const response = await authFetch(urlWithId, {
-        method: "GET",
-      });
-
-      if (response.ok) {
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        setPdfUrl(url);
-      } else {
-        const errorMessage = await response.text();
-        alert(`Erreur lors du chargement: ${errorMessage}`);
-        setIsPopupOpen(false);
-      }
-    } catch (error) {
-      console.error("Error loading PDF:", error);
-      alert(`Erreur lors du chargement : ${error.message}`);
-      setIsPopupOpen(false);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const downloadPdf = async () => {
-    if (!pdfUrl) {
-      alert("Aucun PDF à télécharger.");
-      return;
-    }
-
-    try {
-      // Generate unique file name
-      const timestamp = new Date()
-        .toISOString()
-        .replace(/[-:]/g, "")
-        .replace(/\..+/, "")
-        .replace("T", "_");
-      const fileName = `${currentCommercialName}_${currentPdfType}_${timestamp}.pdf`;
-
-      // Create download link
-      const link = document.createElement("a");
-      link.href = pdfUrl;
-      link.download = fileName;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-
-      alert(`PDF téléchargé avec succès : ${fileName}`);
-    } catch (error) {
-      console.error("Error downloading PDF:", error);
-      alert(`Erreur lors du téléchargement : ${error.message}`);
-    }
-  };
-
-  const closePopup = () => {
-    setIsPopupOpen(false);
-    if (pdfUrl) {
-      window.URL.revokeObjectURL(pdfUrl);
-    }
-    setPdfUrl("");
-    setCurrentPdfType("");
-    setCurrentCommercialName("");
-    setCurrentCommercialId(null);
-    setCurrentApiUrl("");
-  };
-
-  // Clean up blob URL when component unmounts
-  useEffect(() => {
-    return () => {
-      if (pdfUrl) {
-        window.URL.revokeObjectURL(pdfUrl);
-      }
-    };
-  }, [pdfUrl]);
+  const handlePortefeuille = (id, nom) =>
+    setPdf({
+      title: `Portefeuille – ${nom}`,
+      url: `${API_BASE}/Commerces/GenerateRecapPdf?idcomerce=${id}`,
+      fileName: `Portefeuille_${nom}.pdf`,
+    });
 
   return (
     <div className="portefeuilles-commercials">
@@ -184,50 +94,7 @@ const PortefeuillesCommercials = () => {
         </table>
       </div>
 
-      {/* PDF Popup */}
-      {isPopupOpen && (
-        <>
-          <div className="popup-overlay" onClick={closePopup}></div>
-          <div className="pdf-popup">
-            <div className="popup-header">
-              <h2 className="active-content">
-                {currentPdfType} - {currentCommercialName}
-              </h2>
-              <button className="close-btn" onClick={closePopup}>
-                <X size={24} />
-              </button>
-            </div>
-            <div className="popup-content">
-              {isLoading ? (
-                <div className="loading-container">
-                  <div className="spinner"></div>
-                  <p>Chargement du PDF...</p>
-                </div>
-              ) : pdfUrl ? (
-                <iframe
-                  src={pdfUrl}
-                  title="PDF Viewer"
-                  className="pdf-viewer"
-                />
-              ) : (
-                <div className="loading-container">
-                  <p>Erreur de chargement du PDF</p>
-                </div>
-              )}
-            </div>
-            <div className="popup-footer">
-              <button
-                className="download-btn"
-                onClick={downloadPdf}
-                disabled={!pdfUrl || isLoading}
-              >
-                <Download size={20} />
-                Télécharger
-              </button>
-            </div>
-          </div>
-        </>
-      )}
+      <PdfViewer pdf={pdf} onClose={closePdf} />
     </div>
   );
 };

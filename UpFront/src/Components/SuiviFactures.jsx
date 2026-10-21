@@ -1,7 +1,9 @@
-import React, { useState, useEffect } from "react";
-import { ChevronDown, Download, X } from "lucide-react";
+import React, { useState, useEffect, useCallback } from "react";
+import { ChevronDown } from "lucide-react";
 import "./SuiviFactures.css";
 import { useAuth } from "../hooks/useAuth";
+import { API_BASE } from "../config";
+import PdfViewer from "./PdfViewer";
 
 const normalizeProduits = (raw) => {
   // Try to find an array in common payload shapes
@@ -67,9 +69,8 @@ const SuiviFactures = () => {
   });
 
   const [produits, setProduits] = useState([]);
-  const [pdfPopupOpen, setPdfPopupOpen] = useState(false);
-  const [currentPdfUrl, setCurrentPdfUrl] = useState("");
-  const [pdfBlobUrl, setPdfBlobUrl] = useState("");
+  const [pdf, setPdf] = useState(null);
+  const closePdf = useCallback(() => setPdf(null), []);
   const [loading, setLoading] = useState(false);
   const [showProducts, setShowProducts] = useState(false);
   const [loadingProducts, setLoadingProducts] = useState(false);
@@ -86,7 +87,7 @@ const SuiviFactures = () => {
   const fetchProduits = async () => {
     try {
       const response = await authFetch(
-        "https://api.universellepeinture.com/api/Stock/Produits",
+        `${API_BASE}/Stock/Produits`,
         {
           method: "GET",
           headers: {
@@ -233,7 +234,7 @@ const SuiviFactures = () => {
         return;
       }
       const response = await authFetch(
-        "https://api.universellepeinture.com/api/Facture/Add",
+        `${API_BASE}/Facture/Add`,
         {
           method: "POST",
           headers: {
@@ -275,74 +276,13 @@ const SuiviFactures = () => {
     alert(`Une erreur est survenue: ${errorContent}`);
   };
 
-  const showPdfInPopup = async () => {
-    const date = new Date().toISOString().split("T")[0];
-    const url = `https://api.universellepeinture.com/api/Facture/GenerateFacturePdf?FactureDate=${date}`;
-    setCurrentPdfUrl(url);
-    setPdfPopupOpen(true);
-
-    try {
-      const response = await authFetch(url, {
-        method: "GET",
-      });
-
-      if (!response.ok) {
-        const errorMessage = await response.text();
-        alert(`Error: ${errorMessage}`);
-        setPdfPopupOpen(false);
-        return;
-      }
-
-      const blob = await response.blob();
-      const blobUrl = URL.createObjectURL(blob);
-      setPdfBlobUrl(blobUrl);
-    } catch (error) {
-      console.error("Error loading PDF:", error);
-      alert(`An error occurred: ${error.message}`);
-      setPdfPopupOpen(false);
-    }
-  };
-
-  const downloadPdf = async () => {
-    if (!currentPdfUrl) {
-      alert("Aucun PDF à télécharger.");
-      return;
-    }
-
-    try {
-      const response = await authFetch(currentPdfUrl, {
-        method: "GET",
-      });
-
-      if (response.ok) {
-        const blob = await response.blob();
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `facture_${new Date()
-          .toISOString()
-          .replace(/[:.]/g, "-")}.pdf`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-        alert("PDF téléchargé avec succès");
-      } else {
-        alert("Erreur lors du téléchargement du fichier.");
-      }
-    } catch (error) {
-      console.error("Error downloading PDF:", error);
-      alert(`Erreur lors du téléchargement : ${error.message}`);
-    }
-  };
-
-  const closePdfPopup = () => {
-    setPdfPopupOpen(false);
-    if (pdfBlobUrl) {
-      URL.revokeObjectURL(pdfBlobUrl);
-      setPdfBlobUrl("");
-    }
-  };
+  const showPdfInPopup = () =>
+    setPdf({
+      title: "Suivi des factures",
+      urlForDate: (date) =>
+        `${API_BASE}/Facture/GenerateFacturePdf?FactureDate=${date}`,
+      fileNameForDate: (date) => `factures_${date}.pdf`,
+    });
 
   return (
     <div className="suivi-factures">
@@ -693,122 +633,7 @@ const SuiviFactures = () => {
         </div>
       </div>
 
-      {/* PDF Popup */}
-      {pdfPopupOpen && (
-        <div
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: "rgba(0, 0, 0, 0.5)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 1000,
-            padding: "20px",
-          }}
-        >
-          <div
-            style={{
-              backgroundColor: "white",
-              borderRadius: "12px",
-              width: "90%",
-              maxWidth: "1200px",
-              height: "90%",
-              display: "flex",
-              flexDirection: "column",
-              boxShadow: "0 10px 40px rgba(0, 0, 0, 0.3)",
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                padding: "20px",
-                borderBottom: "1px solid #e1e5e9",
-              }}
-            >
-              <h2
-                style={{
-                  margin: 0,
-                  fontSize: "24px",
-                  color: "#1e4a72",
-                  fontWeight: 600,
-                }}
-              >
-                Aperçu PDF
-              </h2>
-              <div style={{ display: "flex", gap: "10px" }}>
-                <button
-                  onClick={downloadPdf}
-                  style={{
-                    padding: "10px",
-                    background: "transparent",
-                    border: "none",
-                    cursor: "pointer",
-                    borderRadius: "6px",
-                    transition: "background-color 0.2s",
-                  }}
-                  onMouseOver={(e) =>
-                    (e.currentTarget.style.backgroundColor = "#f8f9fa")
-                  }
-                  onMouseOut={(e) =>
-                    (e.currentTarget.style.backgroundColor = "transparent")
-                  }
-                  title="Télécharger"
-                >
-                  <Download size={24} color="#1e4a72" />
-                </button>
-                <button
-                  onClick={closePdfPopup}
-                  style={{
-                    padding: "10px",
-                    background: "transparent",
-                    border: "none",
-                    cursor: "pointer",
-                    borderRadius: "6px",
-                    transition: "background-color 0.2s",
-                  }}
-                  onMouseOver={(e) =>
-                    (e.currentTarget.style.backgroundColor = "#f8f9fa")
-                  }
-                  onMouseOut={(e) =>
-                    (e.currentTarget.style.backgroundColor = "transparent")
-                  }
-                  title="Fermer"
-                >
-                  <X size={24} color="#1e4a72" />
-                </button>
-              </div>
-            </div>
-            <div style={{ flex: 1, overflow: "hidden" }}>
-              {pdfBlobUrl ? (
-                <iframe
-                  src={pdfBlobUrl}
-                  style={{ width: "100%", height: "100%", border: "none" }}
-                  title="PDF Viewer"
-                />
-              ) : (
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    height: "100%",
-                    fontSize: "18px",
-                    color: "#666",
-                  }}
-                >
-                  <p>Chargement du PDF...</p>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+      <PdfViewer pdf={pdf} onClose={closePdf} />
     </div>
   );
 };

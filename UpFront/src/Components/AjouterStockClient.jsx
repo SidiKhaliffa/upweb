@@ -61,7 +61,7 @@
 //     console.log("Fetching produits...");
 //     try {
 //       const response = await fetch(
-//         "https://api.universellepeinture.com/api/Stock/Produits",
+//         `${API_BASE}/Stock/Produits`,
 //         {
 //           method: "GET",
 //           headers: {
@@ -379,9 +379,10 @@
 import React, { useState, useEffect } from "react";
 import { ChevronDown } from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
+import { API_BASE } from "../config";
 import "./AjouterStockClient.css";
 
-const API_URL = "https://api.universellepeinture.com/api/Stock/Produits";
+const API_URL = `${API_BASE}/Stock/Produits`;
 
 const normalizeProduits = (raw) => {
   // Try to find an array in common payload shapes
@@ -701,7 +702,7 @@ const AjouterStockClient = () => {
         return;
       }
       const response = await authFetch(
-        "https://api.universellepeinture.com/api/Stock/update",
+        `${API_BASE}/Stock/update`,
         {
           method: "POST",
           headers: {

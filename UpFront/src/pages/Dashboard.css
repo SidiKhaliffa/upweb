@@ -103,6 +103,9 @@ body {
 /* Main Content Styles */
 .main-content {
   flex: 1;
+  /* Lets wide children (tables, charts) shrink or scroll instead of
+     stretching the page past the screen width. */
+  min-width: 0;
   margin-left: 280px;
   display: flex;
   flex-direction: column;

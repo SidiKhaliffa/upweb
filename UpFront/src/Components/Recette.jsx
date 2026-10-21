@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import "./Recette.css";
 import { useAuth } from "../hooks/useAuth";
+import { API_BASE } from "../config";
 
 const Recette = () => {
   const { authFetch, ensureFreshToken, getRoleClaim } = useAuth();
@@ -47,7 +48,7 @@ const Recette = () => {
         return;
       }
       const response = await authFetch(
-        "https://api.universellepeinture.com/api/Stock/recette",
+        `${API_BASE}/Stock/recette`,
         {
           method: "POST",
           headers: {
