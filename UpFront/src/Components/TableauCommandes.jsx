@@ -5,35 +5,32 @@ import { useAuth } from "../hooks/useAuth";
 import { API_BASE } from "../config";
 import PdfViewer from "./PdfViewer";
 
+const LIGNES = [1, 2, 3, 4, 5, 6];
+
+const EMPTY_FORM = {
+  codeClient: "",
+  dateLivraison: "",
+  cash: "",
+  ...Object.fromEntries(LIGNES.flatMap((n) => [[`produit${n}`, ""], [`qte${n}`, ""]])),
+};
+
+const produitName = (produit) => produit.nom || produit.name || produit;
+
+// Server errors come as {message} from UpBack or as plain text from .NET.
+async function readErrorMessage(response) {
+  const text = await response.text();
+  try {
+    return JSON.parse(text).message || text;
+  } catch {
+    return text || `Erreur ${response.status}`;
+  }
+}
+
 const TableauCommandes = () => {
   const { authFetch, ensureFreshToken, getRoleClaim } = useAuth();
-  const [formData, setFormData] = useState({
-    codeClient: "",
-    qte1: "",
-    produit1: "",
-    qte2: "",
-    produit2: "",
-    qte3: "",
-    produit3: "",
-    qte4: "",
-    produit4: "",
-    qte5: "",
-    produit5: "",
-    qte6: "",
-    produit6: "",
-    dateLivraison: "",
-    cash: "",
-  });
-
-  const [dropdowns, setDropdowns] = useState({
-    produit1: false,
-    produit2: false,
-    produit3: false,
-    produit4: false,
-    produit5: false,
-    produit6: false,
-  });
-
+  const [formData, setFormData] = useState(EMPTY_FORM);
+  // Name of the product dropdown currently open ("produit1"...), or null.
+  const [openDropdown, setOpenDropdown] = useState(null);
   const [produits, setProduits] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -49,15 +46,12 @@ const TableauCommandes = () => {
     const fetchProduits = async () => {
       try {
         setLoading(true);
-        const response = await authFetch(
-          `${API_BASE}/Stock/Produits`,
-          {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-            },
-          }
-        );
+        const response = await authFetch(`${API_BASE}/Stock/Produits`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
 
         if (!response.ok) {
           throw new Error("Failed to fetch products");
@@ -86,10 +80,7 @@ const TableauCommandes = () => {
   };
 
   const toggleDropdown = (dropdown) => {
-    setDropdowns((prev) => ({
-      ...prev,
-      [dropdown]: !prev[dropdown],
-    }));
+    setOpenDropdown((prev) => (prev === dropdown ? null : dropdown));
   };
 
   const selectProduit = (dropdown, produit) => {
@@ -97,104 +88,70 @@ const TableauCommandes = () => {
       ...prev,
       [dropdown]: produit,
     }));
-    setDropdowns((prev) => ({
-      ...prev,
-      [dropdown]: false,
-    }));
+    setOpenDropdown(null);
   };
 
   const handleEnregistrer = async () => {
+    setError(null);
+
+    if (getRoleClaim() == "Admin") {
+      alert("Vous n'avez pas les droits nécessaires pour enregistrer une commande.");
+      return;
+    }
+
+    if (!formData.codeClient.trim()) {
+      setError("Saisissez le code client.");
+      return;
+    }
+    if (!formData.dateLivraison) {
+      setError("Choisissez la date de livraison.");
+      return;
+    }
+    if (!LIGNES.some((n) => formData[`produit${n}`])) {
+      setError("Ajoutez au moins un produit avec sa quantité.");
+      return;
+    }
+
+    // A product without a quantity (or the reverse) used to be dropped
+    // silently from the commande.
+    const incomplete = LIGNES.find(
+      (n) => Boolean(formData[`produit${n}`]) !== Boolean(formData[`qte${n}`])
+    );
+    if (incomplete) {
+      setError(`Ligne ${incomplete} : choisissez le produit et sa quantité.`);
+      return;
+    }
+
+    const commandData = {
+      CodeClient: formData.codeClient,
+      Command_date: formData.dateLivraison,
+      cach: formData.cash || "0",
+      StockCommanddto: LIGNES.filter((n) => formData[`produit${n}`]).map((n) => ({
+        NameProduit: formData[`produit${n}`],
+        Quantite: parseInt(formData[`qte${n}`]),
+      })),
+    };
+
     try {
       setLoading(true);
-      setError(null);
-
-      // Prepare the command data
-      const commandData = {
-        CodeClient: formData.codeClient,
-        Command_date: formData.dateLivraison,
-        cach: formData.cash || "0",
-        StockCommanddto: [
-          formData.produit1 &&
-            formData.qte1 && {
-              NameProduit: formData.produit1,
-              Quantite: parseInt(formData.qte1),
-            },
-          formData.produit2 &&
-            formData.qte2 && {
-              NameProduit: formData.produit2,
-              Quantite: parseInt(formData.qte2),
-            },
-          formData.produit3 &&
-            formData.qte3 && {
-              NameProduit: formData.produit3,
-              Quantite: parseInt(formData.qte3),
-            },
-          formData.produit4 &&
-            formData.qte4 && {
-              NameProduit: formData.produit4,
-              Quantite: parseInt(formData.qte4),
-            },
-          formData.produit5 &&
-            formData.qte5 && {
-              NameProduit: formData.produit5,
-              Quantite: parseInt(formData.qte5),
-            },
-          formData.produit6 &&
-            formData.qte6 && {
-              NameProduit: formData.produit6,
-              Quantite: parseInt(formData.qte6),
-            },
-        ].filter(Boolean),
-      };
-
-      if (getRoleClaim() == "Admin") {
-        alert(
-          "Vous n'avez pas les droits nécessaires pour enregistrer une commande."
-        );
-        return;
-      }
-      const response = await authFetch(
-        `${API_BASE}/Command`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(commandData),
-        }
-      );
+      const response = await authFetch(`${API_BASE}/Command`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(commandData),
+      });
 
       if (!response.ok) {
-        throw new Error("Failed to save command");
+        setError(await readErrorMessage(response));
+        return;
       }
 
-      const result = await response;
-      console.log("helllooooo");
       alert("Commande enregistrée avec succès!");
-      console.log("Command saved:", result);
-
-      // Reset form
-      setFormData({
-        codeClient: "",
-        qte1: "",
-        produit1: "",
-        qte2: "",
-        produit2: "",
-        qte3: "",
-        produit3: "",
-        qte4: "",
-        produit4: "",
-        qte5: "",
-        produit5: "",
-        qte6: "",
-        produit6: "",
-        dateLivraison: "",
-        cash: "",
-      });
+      setFormData(EMPTY_FORM);
     } catch (err) {
       setError("Erreur lors de l'enregistrement de la commande");
       console.error("Error saving command:", err);
-      alert("Erreur lors de l'enregistrement de la commande");
     } finally {
       setLoading(false);
     }
@@ -230,291 +187,6 @@ const TableauCommandes = () => {
           </div>
 
           <div className="form-group">
-            <label htmlFor="qte1">Qté1</label>
-            <input
-              type="number"
-              id="qte1"
-              name="qte1"
-              value={formData.qte1}
-              onChange={handleInputChange}
-              className="form-input"
-              min="0"
-            />
-          </div>
-        </div>
-
-        <div className="form-row">
-          <div className="form-group">
-            <label htmlFor="produit1">Produit 1*</label>
-            <div className="dropdown-container">
-              <div
-                className="dropdown-trigger"
-                onClick={() => toggleDropdown("produit1")}
-              >
-                <span>{formData.produit1 || "Sélectionner un produit"}</span>
-                <ChevronDown size={20} />
-              </div>
-              {dropdowns.produit1 && (
-                <div className="dropdown-menu">
-                  {loading ? (
-                    <div className="dropdown-item">Chargement...</div>
-                  ) : produits.length > 0 ? (
-                    produits.map((produit, index) => (
-                      <div
-                        key={index}
-                        className="dropdown-item"
-                        onClick={() =>
-                          selectProduit(
-                            "produit1",
-                            produit.nom || produit.name || produit
-                          )
-                        }
-                      >
-                        {produit.nom || produit.name || produit}
-                      </div>
-                    ))
-                  ) : (
-                    <div className="dropdown-item">
-                      Aucun produit disponible
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="qte2">Qté2</label>
-            <input
-              type="number"
-              id="qte2"
-              name="qte2"
-              value={formData.qte2}
-              onChange={handleInputChange}
-              className="form-input"
-              min="0"
-            />
-          </div>
-        </div>
-
-        <div className="form-row">
-          <div className="form-group">
-            <label htmlFor="produit2">Produit 2</label>
-            <div className="dropdown-container">
-              <div
-                className="dropdown-trigger"
-                onClick={() => toggleDropdown("produit2")}
-              >
-                <span>{formData.produit2 || "Sélectionner un produit"}</span>
-                <ChevronDown size={20} />
-              </div>
-              {dropdowns.produit2 && (
-                <div className="dropdown-menu">
-                  {loading ? (
-                    <div className="dropdown-item">Chargement...</div>
-                  ) : produits.length > 0 ? (
-                    produits.map((produit, index) => (
-                      <div
-                        key={index}
-                        className="dropdown-item"
-                        onClick={() =>
-                          selectProduit(
-                            "produit2",
-                            produit.nom || produit.name || produit
-                          )
-                        }
-                      >
-                        {produit.nom || produit.name || produit}
-                      </div>
-                    ))
-                  ) : (
-                    <div className="dropdown-item">
-                      Aucun produit disponible
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="qte3">Qté3</label>
-            <input
-              type="number"
-              id="qte3"
-              name="qte3"
-              value={formData.qte3}
-              onChange={handleInputChange}
-              className="form-input"
-              min="0"
-            />
-          </div>
-        </div>
-
-        <div className="form-row">
-          <div className="form-group">
-            <label htmlFor="produit4">Produit 4</label>
-            <div className="dropdown-container">
-              <div
-                className="dropdown-trigger"
-                onClick={() => toggleDropdown("produit4")}
-              >
-                <span>{formData.produit4 || "Sélectionner un produit"}</span>
-                <ChevronDown size={20} />
-              </div>
-              {dropdowns.produit4 && (
-                <div className="dropdown-menu">
-                  {loading ? (
-                    <div className="dropdown-item">Chargement...</div>
-                  ) : produits.length > 0 ? (
-                    produits.map((produit, index) => (
-                      <div
-                        key={index}
-                        className="dropdown-item"
-                        onClick={() =>
-                          selectProduit(
-                            "produit4",
-                            produit.nom || produit.name || produit
-                          )
-                        }
-                      >
-                        {produit.nom || produit.name || produit}
-                      </div>
-                    ))
-                  ) : (
-                    <div className="dropdown-item">
-                      Aucun produit disponible
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="qte4">Qté4</label>
-            <input
-              type="number"
-              id="qte4"
-              name="qte4"
-              value={formData.qte4}
-              onChange={handleInputChange}
-              className="form-input"
-              min="0"
-            />
-          </div>
-        </div>
-
-        <div className="form-row">
-          <div className="form-group">
-            <label htmlFor="produit5">Produit 5</label>
-            <div className="dropdown-container">
-              <div
-                className="dropdown-trigger"
-                onClick={() => toggleDropdown("produit5")}
-              >
-                <span>{formData.produit5 || "Sélectionner un produit"}</span>
-                <ChevronDown size={20} />
-              </div>
-              {dropdowns.produit5 && (
-                <div className="dropdown-menu">
-                  {loading ? (
-                    <div className="dropdown-item">Chargement...</div>
-                  ) : produits.length > 0 ? (
-                    produits.map((produit, index) => (
-                      <div
-                        key={index}
-                        className="dropdown-item"
-                        onClick={() =>
-                          selectProduit(
-                            "produit5",
-                            produit.nom || produit.name || produit
-                          )
-                        }
-                      >
-                        {produit.nom || produit.name || produit}
-                      </div>
-                    ))
-                  ) : (
-                    <div className="dropdown-item">
-                      Aucun produit disponible
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="qte5">Qté5</label>
-            <input
-              type="number"
-              id="qte5"
-              name="qte5"
-              value={formData.qte5}
-              onChange={handleInputChange}
-              className="form-input"
-              min="0"
-            />
-          </div>
-        </div>
-
-        <div className="form-row">
-          <div className="form-group">
-            <label htmlFor="produit6">Produit 6</label>
-            <div className="dropdown-container">
-              <div
-                className="dropdown-trigger"
-                onClick={() => toggleDropdown("produit6")}
-              >
-                <span>{formData.produit6 || "Sélectionner un produit"}</span>
-                <ChevronDown size={20} />
-              </div>
-              {dropdowns.produit6 && (
-                <div className="dropdown-menu">
-                  {loading ? (
-                    <div className="dropdown-item">Chargement...</div>
-                  ) : produits.length > 0 ? (
-                    produits.map((produit, index) => (
-                      <div
-                        key={index}
-                        className="dropdown-item"
-                        onClick={() =>
-                          selectProduit(
-                            "produit6",
-                            produit.nom || produit.name || produit
-                          )
-                        }
-                      >
-                        {produit.nom || produit.name || produit}
-                      </div>
-                    ))
-                  ) : (
-                    <div className="dropdown-item">
-                      Aucun produit disponible
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="qte6">Qté6</label>
-            <input
-              type="number"
-              id="qte6"
-              name="qte6"
-              value={formData.qte6}
-              onChange={handleInputChange}
-              className="form-input"
-              min="0"
-            />
-          </div>
-        </div>
-
-        <div className="form-row">
-          <div className="form-group">
             <label htmlFor="dateLivraison">Date de Délivraison*</label>
             <div className="date-input-container">
               <input
@@ -528,11 +200,71 @@ const TableauCommandes = () => {
               />
             </div>
           </div>
-
-          <div className="form-group">
-            {/* Empty column for layout consistency */}
-          </div>
         </div>
+
+        {LIGNES.map((n) => {
+          const dropdown = `produit${n}`;
+          return (
+            <div className="form-row" key={n}>
+              <div className="form-group">
+                <label>Produit {n}{n === 1 && "*"}</label>
+                <div className="dropdown-container">
+                  <div
+                    className="dropdown-trigger"
+                    onClick={() => toggleDropdown(dropdown)}
+                  >
+                    <span>{formData[dropdown] || "Sélectionner un produit"}</span>
+                    <ChevronDown size={20} />
+                  </div>
+                  {openDropdown === dropdown && (
+                    <div className="dropdown-menu">
+                      {loading ? (
+                        <div className="dropdown-item">Chargement...</div>
+                      ) : produits.length > 0 ? (
+                        <>
+                          {formData[dropdown] && (
+                            <div
+                              className="dropdown-item"
+                              onClick={() => selectProduit(dropdown, "")}
+                            >
+                              <em>Aucun</em>
+                            </div>
+                          )}
+                          {produits.map((produit, index) => (
+                            <div
+                              key={index}
+                              className="dropdown-item"
+                              onClick={() =>
+                                selectProduit(dropdown, produitName(produit))
+                              }
+                            >
+                              {produitName(produit)}
+                            </div>
+                          ))}
+                        </>
+                      ) : (
+                        <div className="dropdown-item">Aucun produit disponible</div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label htmlFor={`qte${n}`}>Qté {n}{n === 1 && "*"}</label>
+                <input
+                  type="number"
+                  id={`qte${n}`}
+                  name={`qte${n}`}
+                  value={formData[`qte${n}`]}
+                  onChange={handleInputChange}
+                  className="form-input"
+                  min="1"
+                />
+              </div>
+            </div>
+          );
+        })}
 
         <div className="form-row">
           <div className="form-group full-width">
