@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import "./InscriptionClient.css";
 import { useAuth } from "../hooks/useAuth";
 import { API_BASE } from "../config";
+import { readErrorMessage } from "../utils/http";
+import { toast } from "../utils/toast";
 
 const InscriptionClient = () => {
   const { authFetch, ensureFreshToken, getRoleClaim } = useAuth();
@@ -28,12 +30,11 @@ const InscriptionClient = () => {
   };
 
   const handleSubmit = async () => {
-    console.log("Inscription data:", formData);
     // Handle form submission here
 
     try {
       if (getRoleClaim()?.[1] == "Admin") {
-        alert("Vous n'avez pas les droits pour inscrire un client.");
+        toast.error("Vous n'avez pas les droits pour inscrire un client.");
         return;
       }
       const response = await authFetch(
@@ -46,9 +47,8 @@ const InscriptionClient = () => {
           body: JSON.stringify(formData),
         }
       );
-      const data = await response;
       if (response.ok) {
-        alert("Client inscrit avec succès!");
+        toast.success("Client inscrit.");
         setFormData({
           code: "",
           zone: "",
@@ -59,17 +59,17 @@ const InscriptionClient = () => {
           coordonneesGPS: "",
         });
       } else {
-        alert(data.message || "Erreur lors de l'inscription du client.");
+        toast.error(await readErrorMessage(response));
       }
     } catch (error) {
       console.error("Error:", error);
-      alert("Une erreur est survenue lors de l'inscription.");
+      toast.error("Une erreur est survenue lors de l'inscription.");
     }
   };
 
   return (
     <div className="inscription-client">
-      <h1 className="page-title">Inscription Du Client</h1>
+      <h1 className="page-title">Inscription client</h1>
 
       <div className="form-container">
         <div className="form-row">
@@ -86,7 +86,7 @@ const InscriptionClient = () => {
           </div>
 
           <div className="form-group">
-            <label htmlFor="zone">Zone *</label>
+            <label htmlFor="zone">Zone*</label>
             <input
               type="text"
               id="zone"
@@ -100,7 +100,7 @@ const InscriptionClient = () => {
 
         <div className="form-row">
           <div className="form-group">
-            <label htmlFor="nomSociete">Nom de la Societe</label>
+            <label htmlFor="nomSociete">Nom de la société</label>
             <input
               type="text"
               id="nomSociete"
@@ -126,7 +126,7 @@ const InscriptionClient = () => {
 
         <div className="form-row">
           <div className="form-group">
-            <label htmlFor="Respnsible_Name">Nom du responsable *</label>
+            <label htmlFor="Respnsible_Name">Nom du responsable*</label>
             <input
               type="text"
               id="Respnsible_Name"
@@ -138,7 +138,7 @@ const InscriptionClient = () => {
           </div>
 
           <div className="form-group">
-            <label htmlFor="Phone_Number">Numero de Telephone*</label>
+            <label htmlFor="Phone_Number">Numéro de téléphone*</label>
             <input
               type="tel"
               id="Phone_Number"
@@ -152,7 +152,7 @@ const InscriptionClient = () => {
 
         <div className="form-row">
           <div className="form-group full-width">
-            <label htmlFor="coordonneesGPS">CoordonneesGPS</label>
+            <label htmlFor="coordonneesGPS">Coordonnées GPS</label>
             <input
               type="text"
               id="coordonneesGPS"

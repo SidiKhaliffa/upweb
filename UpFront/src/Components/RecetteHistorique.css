@@ -226,7 +226,7 @@
 }
 
 /* Table Cell Specific Styles */
-.date {
+.recette-historique .date {
   font-family: monospace;
   font-size: 14px;
   color: #666;
@@ -243,7 +243,7 @@
   color: #666;
 }
 
-.recette {
+.recette-historique .recette {
   text-align: right;
   font-weight: 600;
   color: #28a745;

@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import "./ModifierBalanceTier.css";
 import { useAuth } from "../hooks/useAuth";
 import { API_BASE } from "../config";
+import { readErrorMessage } from "../utils/http";
+import { toast } from "../utils/toast";
 
 const ModifierBalanceTier = () => {
   const { authFetch, ensureFreshToken, getRoleClaim } = useAuth();
@@ -23,11 +25,10 @@ const ModifierBalanceTier = () => {
   };
 
   const handleSubmit = async () => {
-    console.log("Balance Tier data:", formData);
     // Handle form submission here
     try {
       if (getRoleClaim()?.[1] == "Admin") {
-        alert(
+        toast.error(
           "Vous n'avez pas les droits nécessaires pour modifier la balance."
         );
         return;
@@ -44,23 +45,23 @@ const ModifierBalanceTier = () => {
       );
       // const data = await response.json();
       if (response.ok) {
-        alert("Balance du tier modifiée avec succès!");
+        toast.success("Balance du client modifiée.");
         setFormData({
           CodeClient: "",
           priseCompta: "",
         });
       } else {
-        alert("Erreur lors de la modification de la balance du tier.");
+        toast.error(await readErrorMessage(response));
       }
     } catch (error) {
       console.error("Error:", error);
-      alert("Une erreur est survenue lors de la modification de la balance.");
+      toast.error("Une erreur est survenue lors de la modification de la balance.");
     }
   };
 
   return (
     <div className="modifier-balance-tier">
-      <h1 className="page-title">Modifier Balance Tier</h1>
+      <h1 className="page-title">Balance client</h1>
 
       <div className="form-container">
         <div className="form-group">

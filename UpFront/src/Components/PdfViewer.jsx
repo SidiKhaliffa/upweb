@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Download, ExternalLink, X } from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
+import { readErrorMessage } from "../utils/http";
 import "./PdfViewer.css";
 
 // Phones and tablets can't reliably show a PDF inside an iframe (blank
@@ -9,16 +10,6 @@ import "./PdfViewer.css";
 const canPreviewInline = () =>
   navigator.pdfViewerEnabled !== false &&
   !window.matchMedia("(pointer: coarse)").matches;
-
-// Server errors come as {message} from UpBack or as plain text from .NET.
-async function readErrorMessage(response) {
-  const text = await response.text();
-  try {
-    return JSON.parse(text).message || text;
-  } catch {
-    return text || `Erreur ${response.status}`;
-  }
-}
 
 // "attachment; filename="X.pdf"; filename*=UTF-8''X.pdf" -> "X.pdf"
 function fileNameFromHeader(header) {

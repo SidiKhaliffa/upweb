@@ -3,6 +3,8 @@ import { ChevronDown } from "lucide-react";
 import "./TableauCommandes.css";
 import { useAuth } from "../hooks/useAuth";
 import { API_BASE } from "../config";
+import { readErrorMessage } from "../utils/http";
+import { toast } from "../utils/toast";
 import PdfViewer from "./PdfViewer";
 
 const LIGNES = [1, 2, 3, 4, 5, 6];
@@ -15,16 +17,6 @@ const EMPTY_FORM = {
 };
 
 const produitName = (produit) => produit.nom || produit.name || produit;
-
-// Server errors come as {message} from UpBack or as plain text from .NET.
-async function readErrorMessage(response) {
-  const text = await response.text();
-  try {
-    return JSON.parse(text).message || text;
-  } catch {
-    return text || `Erreur ${response.status}`;
-  }
-}
 
 const TableauCommandes = () => {
   const { authFetch, ensureFreshToken, getRoleClaim } = useAuth();
@@ -92,23 +84,21 @@ const TableauCommandes = () => {
   };
 
   const handleEnregistrer = async () => {
-    setError(null);
-
     if (getRoleClaim() == "Admin") {
-      alert("Vous n'avez pas les droits nécessaires pour enregistrer une commande.");
+      toast.error("Vous n'avez pas les droits nécessaires pour enregistrer une commande.");
       return;
     }
 
     if (!formData.codeClient.trim()) {
-      setError("Saisissez le code client.");
+      toast.error("Saisissez le code client.");
       return;
     }
     if (!formData.dateLivraison) {
-      setError("Choisissez la date de livraison.");
+      toast.error("Choisissez la date de livraison.");
       return;
     }
     if (!LIGNES.some((n) => formData[`produit${n}`])) {
-      setError("Ajoutez au moins un produit avec sa quantité.");
+      toast.error("Ajoutez au moins un produit avec sa quantité.");
       return;
     }
 
@@ -118,7 +108,7 @@ const TableauCommandes = () => {
       (n) => Boolean(formData[`produit${n}`]) !== Boolean(formData[`qte${n}`])
     );
     if (incomplete) {
-      setError(`Ligne ${incomplete} : choisissez le produit et sa quantité.`);
+      toast.error(`Ligne ${incomplete} : choisissez le produit et sa quantité.`);
       return;
     }
 
@@ -143,14 +133,14 @@ const TableauCommandes = () => {
       });
 
       if (!response.ok) {
-        setError(await readErrorMessage(response));
+        toast.error(await readErrorMessage(response));
         return;
       }
 
-      alert("Commande enregistrée avec succès!");
+      toast.success("Commande enregistrée.");
       setFormData(EMPTY_FORM);
     } catch (err) {
-      setError("Erreur lors de l'enregistrement de la commande");
+      toast.error("Erreur lors de l'enregistrement de la commande");
       console.error("Error saving command:", err);
     } finally {
       setLoading(false);
@@ -167,7 +157,7 @@ const TableauCommandes = () => {
 
   return (
     <div className="tableau-commandes">
-      <h1 className="page-title">Tableau de Commandes</h1>
+      <h1 className="page-title">Commandes et livraisons</h1>
 
       {error && <div className="error-message">{error}</div>}
 
@@ -187,7 +177,7 @@ const TableauCommandes = () => {
           </div>
 
           <div className="form-group">
-            <label htmlFor="dateLivraison">Date de Délivraison*</label>
+            <label htmlFor="dateLivraison">Date de livraison*</label>
             <div className="date-input-container">
               <input
                 type="date"
@@ -205,7 +195,7 @@ const TableauCommandes = () => {
         {LIGNES.map((n) => {
           const dropdown = `produit${n}`;
           return (
-            <div className="form-row" key={n}>
+            <div className="form-row product-line" key={n}>
               <div className="form-group">
                 <label>Produit {n}{n === 1 && "*"}</label>
                 <div className="dropdown-container">

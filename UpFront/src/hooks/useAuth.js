@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 import { API_BASE } from "../config";
+import { toast } from "../utils/toast";
 
 const ROLE_CLAIM =
   "http://schemas.microsoft.com/ws/2008/06/identity/claims/role";
@@ -89,7 +90,7 @@ export const useAuth = () => {
       if (error instanceof SessionExpiredError) {
         // Several callers can land here together: warn only once.
         if (localStorage.getItem("token")) {
-          alert("Votre session a expiré. Veuillez vous reconnecter.");
+          toast.info("Votre session a expiré. Veuillez vous reconnecter.");
           logout();
         }
         return null;

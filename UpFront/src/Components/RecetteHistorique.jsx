@@ -146,7 +146,7 @@ const RecetteHistorique = () => {
 
   return (
     <div className="recette-historique">
-      <h1 className="page-title">Recette Historique</h1>
+      <h1 className="page-title">Historique des recettes</h1>
 
       {error && (
         <div className="error-message">

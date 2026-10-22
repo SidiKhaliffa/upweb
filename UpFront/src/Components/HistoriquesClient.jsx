@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import "./HistoriquesClient.css";
 import { useAuth } from "../hooks/useAuth";
 import { API_BASE } from "../config";
+import { toast } from "../utils/toast";
 import { formatAmount, formatNumber } from "../utils/format";
 
 const HistoriquesClient = ({ authToken }) => {
@@ -28,7 +29,7 @@ const HistoriquesClient = ({ authToken }) => {
 
   const handleRechercher = async () => {
     if (!formData.codeClient.trim()) {
-      alert("Veuillez entrer un code client");
+      toast.error("Veuillez entrer un code client.");
       return;
     }
 
@@ -97,7 +98,7 @@ const HistoriquesClient = ({ authToken }) => {
 
   return (
     <div className="historiques-client">
-      <h1 className="page-title">Historiques du Client</h1>
+      <h1 className="page-title">Historique client</h1>
 
       {error && <div className="error-message">{error}</div>}
 

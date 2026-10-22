@@ -3,6 +3,7 @@ import { ChevronDown } from "lucide-react";
 import "./SuiviFactures.css";
 import { useAuth } from "../hooks/useAuth";
 import { API_BASE } from "../config";
+import { toast } from "../utils/toast";
 import PdfViewer from "./PdfViewer";
 
 const normalizeProduits = (raw) => {
@@ -163,19 +164,19 @@ const SuiviFactures = () => {
       !formData.codeClient ||
       !formData.date
     ) {
-      alert("Tous les champs marqués d'un * sont obligatoires.");
+      toast.error("Tous les champs marqués d'un * sont obligatoires.");
       return false;
     }
 
     const montant = Number(formData.montant);
     if (!Number.isFinite(montant)) {
-      alert("Montant doit être un nombre.");
+      toast.error("Montant doit être un nombre.");
       return false;
     }
 
     const q1 = Number(formData.quantite1);
     if (!formData.produit1 || !Number.isFinite(q1) || q1 <= 0) {
-      alert("Le produit 1 et sa quantité (> 0) sont obligatoires.");
+      toast.error("Le produit 1 et sa quantité (> 0) sont obligatoires.");
       return false;
     }
 
@@ -228,7 +229,7 @@ const SuiviFactures = () => {
 
     try {
       if (getRoleClaim() == "Admin") {
-        alert(
+        toast.error(
           "Vous n'avez pas les droits nécessaires pour ajouter une facture."
         );
         return;
@@ -245,7 +246,7 @@ const SuiviFactures = () => {
       );
 
       if (response.ok) {
-        alert("Les données ont été ajoutées avec succès.");
+        toast.success("Facture enregistrée.");
         clearInputs();
       } else {
         const errorContent = await response.text();
@@ -253,7 +254,7 @@ const SuiviFactures = () => {
       }
     } catch (error) {
       console.error("Error submitting facture:", error);
-      alert("Une erreur est survenue lors de l'enregistrement de la facture.");
+      toast.error("Une erreur est survenue lors de l'enregistrement de la facture.");
     } finally {
       setLoading(false);
     }
@@ -264,16 +265,20 @@ const SuiviFactures = () => {
 
     try {
       const errorResponse = JSON.parse(errorContent);
+      if (errorResponse.message) {
+        toast.error(errorResponse.message);
+        return;
+      }
       if (errorResponse.Errors) {
         const messages = Object.values(errorResponse.Errors).flat().join("\n");
-        alert(messages);
+        toast.error(messages);
         return;
       }
     } catch (e) {
       // If JSON parsing fails, show raw error
     }
 
-    alert(`Une erreur est survenue: ${errorContent}`);
+    toast.error(errorContent || "Une erreur est survenue.");
   };
 
   const showPdfInPopup = () =>
@@ -286,7 +291,7 @@ const SuiviFactures = () => {
 
   return (
     <div className="suivi-factures">
-      <h1 className="page-title">Suivi De Factures</h1>
+      <h1 className="page-title">Factures</h1>
 
       <div className="form-container">
         <div className="form-header">
@@ -318,7 +323,7 @@ const SuiviFactures = () => {
 
           <div className="form-row">
             <div className="form-group">
-              <label htmlFor="numeroFacture">Numero Facture*</label>
+              <label htmlFor="numeroFacture">Numéro de facture*</label>
               <input
                 type="text"
                 id="numeroFacture"
@@ -355,259 +360,53 @@ const SuiviFactures = () => {
           </div>
         </div>
 
-        <div className="products-grid">
-          <div className="products-column">
-            {/* Produit 1 */}
-            <div className="form-group">
-              <label htmlFor="produit1">Produit 1*</label>
-              <div className="dropdown-container">
-                <div
-                  className="dropdown-trigger"
-                  onClick={() => toggleDropdown("produit1")}
-                >
-                  <span>{formData.produit1 || "Sélectionner un produit"}</span>
-                  <ChevronDown size={20} />
-                </div>
-                {dropdowns.produit1 && (
-                  <div className="dropdown-menu">
-                    {produits.map((produit) => (
-                      <div
-                        key={produit.id}
-                        className="dropdown-item"
-                        onClick={() => selectProduit("produit1", produit)}
-                      >
-                        {produit.name}
-                      </div>
-                    ))}
+        {[1, 2, 3, 4, 5, 6].map((n) => {
+          const dropdown = `produit${n}`;
+          return (
+            <div className="form-row product-line" key={n}>
+              <div className="form-group">
+                <label>Produit {n}{n === 1 && "*"}</label>
+                <div className="dropdown-container">
+                  <div
+                    className="dropdown-trigger"
+                    onClick={() => toggleDropdown(dropdown)}
+                  >
+                    <span>{formData[dropdown] || "Sélectionner un produit"}</span>
+                    <ChevronDown size={20} />
                   </div>
-                )}
+                  {dropdowns[dropdown] && (
+                    <div className="dropdown-menu">
+                      {produits.map((produit) => (
+                        <div
+                          key={produit.id}
+                          className="dropdown-item"
+                          onClick={() => selectProduit(dropdown, produit)}
+                        >
+                          {produit.name}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label htmlFor={`quantite${n}`}>Qté {n}{n === 1 && "*"}</label>
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  id={`quantite${n}`}
+                  name={`quantite${n}`}
+                  min="1"
+                  step="1"
+                  value={formData[`quantite${n}`]}
+                  onChange={handleInputChange}
+                  className="form-input"
+                />
               </div>
             </div>
-
-            <div className="form-group">
-              <label htmlFor="quantite1">Quantité 1*</label>
-              <input
-                type="number"
-                id="quantite1"
-                name="quantite1"
-                min="1"
-                step="1"
-                value={formData.quantite1}
-                onChange={handleInputChange}
-                className="form-input"
-              />
-            </div>
-
-            {/* Produit 2 */}
-            <div className="form-group">
-              <label htmlFor="produit2">Produit 2</label>
-              <div className="dropdown-container">
-                <div
-                  className="dropdown-trigger"
-                  onClick={() => toggleDropdown("produit2")}
-                >
-                  <span>{formData.produit2 || "Sélectionner un produit"}</span>
-                  <ChevronDown size={20} />
-                </div>
-                {dropdowns.produit2 && (
-                  <div className="dropdown-menu">
-                    {produits.map((produit) => (
-                      <div
-                        key={produit.id}
-                        className="dropdown-item"
-                        onClick={() => selectProduit("produit2", produit)}
-                      >
-                        {produit.name}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="quantite2">Quantité 2</label>
-              <input
-                type="number"
-                id="quantite2"
-                name="quantite2"
-                min="1"
-                step="1"
-                value={formData.quantite2}
-                onChange={handleInputChange}
-                className="form-input"
-              />
-            </div>
-          </div>
-
-          <div className="products-column">
-            {/* Produit 3 */}
-            <div className="form-group">
-              <label htmlFor="produit3">Produit 3</label>
-              <div className="dropdown-container">
-                <div
-                  className="dropdown-trigger"
-                  onClick={() => toggleDropdown("produit3")}
-                >
-                  <span>{formData.produit3 || "Sélectionner un produit"}</span>
-                  <ChevronDown size={20} />
-                </div>
-                {dropdowns.produit3 && (
-                  <div className="dropdown-menu">
-                    {produits.map((produit) => (
-                      <div
-                        key={produit.id}
-                        className="dropdown-item"
-                        onClick={() => selectProduit("produit3", produit)}
-                      >
-                        {produit.name}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="quantite3">Quantité 3</label>
-              <input
-                type="number"
-                id="quantite3"
-                name="quantite3"
-                min="1"
-                step="1"
-                value={formData.quantite3}
-                onChange={handleInputChange}
-                className="form-input"
-              />
-            </div>
-
-            {/* Produit 4 */}
-            <div className="form-group">
-              <label htmlFor="produit4">Produit 4</label>
-              <div className="dropdown-container">
-                <div
-                  className="dropdown-trigger"
-                  onClick={() => toggleDropdown("produit4")}
-                >
-                  <span>{formData.produit4 || "Sélectionner un produit"}</span>
-                  <ChevronDown size={20} />
-                </div>
-                {dropdowns.produit4 && (
-                  <div className="dropdown-menu">
-                    {produits.map((produit) => (
-                      <div
-                        key={produit.id}
-                        className="dropdown-item"
-                        onClick={() => selectProduit("produit4", produit)}
-                      >
-                        {produit.name}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="quantite4">Quantité 4</label>
-              <input
-                type="number"
-                id="quantite4"
-                name="quantite4"
-                min="1"
-                step="1"
-                value={formData.quantite4}
-                onChange={handleInputChange}
-                className="form-input"
-              />
-            </div>
-          </div>
-
-          <div className="products-column">
-            {/* Produit 5 */}
-            <div className="form-group">
-              <label htmlFor="produit5">Produit 5</label>
-              <div className="dropdown-container">
-                <div
-                  className="dropdown-trigger"
-                  onClick={() => toggleDropdown("produit5")}
-                >
-                  <span>{formData.produit5 || "Sélectionner un produit"}</span>
-                  <ChevronDown size={20} />
-                </div>
-                {dropdowns.produit5 && (
-                  <div className="dropdown-menu">
-                    {produits.map((produit) => (
-                      <div
-                        key={produit.id}
-                        className="dropdown-item"
-                        onClick={() => selectProduit("produit5", produit)}
-                      >
-                        {produit.name}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="quantite5">Quantité 5</label>
-              <input
-                type="number"
-                id="quantite5"
-                name="quantite5"
-                min="1"
-                step="1"
-                value={formData.quantite5}
-                onChange={handleInputChange}
-                className="form-input"
-              />
-            </div>
-
-            {/* Produit 6 */}
-            <div className="form-group">
-              <label htmlFor="produit6">Produit 6</label>
-              <div className="dropdown-container">
-                <div
-                  className="dropdown-trigger"
-                  onClick={() => toggleDropdown("produit6")}
-                >
-                  <span>{formData.produit6 || "Sélectionner un produit"}</span>
-                  <ChevronDown size={20} />
-                </div>
-                {dropdowns.produit6 && (
-                  <div className="dropdown-menu">
-                    {produits.map((produit) => (
-                      <div
-                        key={produit.id}
-                        className="dropdown-item"
-                        onClick={() => selectProduit("produit6", produit)}
-                      >
-                        {produit.name}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="quantite6">Quantité 6</label>
-              <input
-                type="number"
-                id="quantite6"
-                name="quantite6"
-                min="1"
-                step="1"
-                value={formData.quantite6}
-                onChange={handleInputChange}
-                className="form-input"
-              />
-            </div>
-          </div>
-        </div>
+          );
+        })}
 
         <div className="form-actions">
           <button
@@ -622,11 +421,7 @@ const SuiviFactures = () => {
           <button
             type="button"
             onClick={showPdfInPopup}
-            className="submit-btn"
-            style={{
-              marginLeft: "20px",
-              background: "linear-gradient(135deg, #28a745, #20c997)",
-            }}
+            className="generate-btn"
           >
             Voir PDF
           </button>

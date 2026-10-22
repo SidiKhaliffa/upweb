@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import "./Recette.css";
 import { useAuth } from "../hooks/useAuth";
 import { API_BASE } from "../config";
+import { readErrorMessage } from "../utils/http";
+import { toast } from "../utils/toast";
 
 const Recette = () => {
   const { authFetch, ensureFreshToken, getRoleClaim } = useAuth();
@@ -26,23 +28,23 @@ const Recette = () => {
   const handleSubmit = async () => {
     console.log("Recette data:", formData);
     if (!formData.Recette_Date) {
-      alert("Veuillez sélectionner une date de recette.");
+      toast.error("Veuillez sélectionner une date de recette.");
       return;
     } else if (
       !formData.priseCompta ||
       isNaN(formData.priseCompta) ||
       Number(formData.priseCompta) <= 0
     ) {
-      alert("Veuillez entrer un montant de recette valide.");
+      toast.error("Veuillez entrer un montant de recette valide.");
       return;
     } else if (!formData.CodeClient) {
-      alert("Veuillez entrer un code client.");
+      toast.error("Veuillez entrer un code client.");
       return;
     }
 
     try {
       if (getRoleClaim()?.[1] == "Admin") {
-        alert(
+        toast.error(
           "Vous n'avez pas les droits nécessaires pour enregistrer une recette."
         );
         return;
@@ -58,18 +60,18 @@ const Recette = () => {
         }
       );
       if (response.ok) {
-        alert("Recette enregistrée avec succès!");
+        toast.success("Recette enregistrée.");
         setFormData({
           CodeClient: "",
           priseCompta: "",
           Recette_Date: "",
         });
       } else {
-        alert("Erreur lors de l'enregistrement de la recette.");
+        toast.error(await readErrorMessage(response));
       }
     } catch (error) {
       console.error("Error:", error);
-      alert("Erreur lors de l'enregistrement de la recette.");
+      toast.error("Erreur lors de l'enregistrement de la recette.");
     }
   };
 

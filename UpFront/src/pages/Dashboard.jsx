@@ -1,5 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { Bell, CheckCircle, LogOut, Menu, X } from 'lucide-react';
+import {
+  Banknote,
+  ChartColumn,
+  CheckCircle,
+  ChevronRight,
+  FileText,
+  History,
+  LogOut,
+  Menu,
+  Package,
+  PaintRoller,
+  Receipt,
+  Scale,
+  Truck,
+  UserPlus,
+  Wallet,
+  X,
+} from 'lucide-react';
 import InscriptionClient from '../Components/InscriptionClient';
 import TableauCommandes from '../Components/TableauCommandes';
 import PortefeuillesCommercials from '../Components/PortefeuillesCommercials';
@@ -11,32 +28,55 @@ import HistoriquesClient from '../Components/HistoriquesClient';
 import SuiviFactures from '../Components/SuiviFactures';
 import Statistiques from '../Components/Statistiques';
 import Peintres from '../Components/Peintres';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import './Dashboard.css';
 
+const MENU_GROUPS = [
+  {
+    label: 'Clients',
+    items: [
+      { id: 'inscription', label: 'Inscription client', icon: UserPlus, component: InscriptionClient },
+      { id: 'historique', label: 'Historique client', icon: History, component: HistoriquesClient },
+      { id: 'portefeuilles', label: 'Portefeuilles commerciaux', icon: Wallet, component: PortefeuillesCommercials },
+    ],
+  },
+  {
+    label: 'Ventes',
+    items: [
+      { id: 'programmes', label: 'Commandes et livraisons', icon: Truck, component: TableauCommandes },
+      { id: 'ajout', label: 'Factures', icon: FileText, component: SuiviFactures },
+      { id: 'recette', label: 'Recette', icon: Banknote, component: Recette },
+      { id: 'historique-recette', label: 'Historique des recettes', icon: Receipt, component: RecetteHistorique },
+      { id: 'balance', label: 'Balance client', icon: Scale, component: ModifierBalanceTier },
+    ],
+  },
+  {
+    label: 'Stock',
+    items: [
+      { id: 'stock', label: 'Stock client', icon: Package, component: AjouterStockClient },
+      { id: 'statistiques', label: 'Statistiques', icon: ChartColumn, component: Statistiques },
+    ],
+  },
+  {
+    label: 'Réseau',
+    items: [{ id: 'peintres', label: 'Peintres', icon: PaintRoller, component: Peintres }],
+  },
+];
+
+const MENU_ITEMS = MENU_GROUPS.flatMap((group) => group.items);
+
 const Dashboard = () => {
-  const [activeMenuItem, setActiveMenuItem] = useState('');
+  // The open page lives in the URL (?page=...): a refresh keeps it, and the
+  // phone's back button returns to the previous page instead of leaving.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeItem = MENU_ITEMS.find((item) => item.id === searchParams.get('page'));
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [showLoginSuccess, setShowLoginSuccess] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const { logout } = useAuth();
-
-  const menuItems = [
-    { id: 'inscription', label: 'Inscription Client', component: InscriptionClient },
-    { id: 'programmes', label: 'Programmes de Livraisons', component: TableauCommandes },
-    { id: 'portefeuilles', label: 'Portefeuilles des Comercials', component: PortefeuillesCommercials },
-    { id: 'balance', label: 'Modifier Balance Tier', component: ModifierBalanceTier },
-    { id: 'stock', label: 'Modifier Stock', component: AjouterStockClient },
-    { id: 'recette', label: 'Recette', component: Recette },
-    { id: 'historique-recette', label: 'Historique du Recette', component: RecetteHistorique },
-    { id: 'historique', label: 'Historique', component: HistoriquesClient },
-    { id: 'ajout', label: 'Ajout de Factures', component: SuiviFactures },
-    { id: 'statistiques', label: 'Statistiques', component: Statistiques },
-    { id: 'peintres', label: 'Peintres', component: Peintres }
-  ];
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -50,7 +90,7 @@ const Dashboard = () => {
   useEffect(() => {
     if (location.state?.loginSuccess) {
       setShowLoginSuccess(true);
-      navigate(location.pathname, { replace: true, state: {} });
+      navigate(location.pathname + location.search, { replace: true, state: {} });
       const timer = setTimeout(() => setShowLoginSuccess(false), 4000);
       return () => clearTimeout(timer);
     }
@@ -71,24 +111,6 @@ const Dashboard = () => {
     return () => window.removeEventListener('resize', checkScreenSize);
   }, []);
 
-  // Close mobile menu when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (isMobileMenuOpen && isMobile) {
-        const sidebar = document.querySelector('.sidebar');
-        const menuToggle = document.querySelector('.mobile-menu-toggle');
-        
-        if (sidebar && !sidebar.contains(event.target) && 
-            menuToggle && !menuToggle.contains(event.target)) {
-          setIsMobileMenuOpen(false);
-        }
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [isMobileMenuOpen, isMobile]);
-
   // Prevent body scroll when mobile menu is open
   useEffect(() => {
     if (isMobile && isMobileMenuOpen) {
@@ -102,94 +124,95 @@ const Dashboard = () => {
     };
   }, [isMobile, isMobileMenuOpen]);
 
-  const handleMenuClick = (itemId) => {
-    setActiveMenuItem(itemId);
-    // Close mobile menu when item is selected
-    if (isMobile) {
-      setIsMobileMenuOpen(false);
+  const openPage = (itemId) => {
+    if (itemId !== activeItem?.id) {
+      setSearchParams(itemId ? { page: itemId } : {});
+      window.scrollTo(0, 0);
     }
-    console.log(`Navigating to: ${itemId}`);
+    setIsMobileMenuOpen(false);
   };
 
-  const toggleMobileMenu = () => {
-    setIsMobileMenuOpen(!isMobileMenuOpen);
-  };
-
-  const handleDisconnect = () => {
-    console.log('Disconnect clicked');
-    logout();
-  };
+  const ActiveComponent = activeItem?.component;
 
   return (
     <div className="dashboard-container">
       {/* Mobile Overlay */}
       {isMobile && isMobileMenuOpen && (
-        <div 
-          className="mobile-overlay" 
+        <div
+          className="mobile-overlay"
           onClick={() => setIsMobileMenuOpen(false)}
         />
       )}
 
       {/* Sidebar */}
-      <div className={`sidebar ${isMobileMenuOpen ? 'mobile-open' : ''}`}>
-        {/* Mobile Close Button */}
-        {isMobile && (
-          <button 
-            className="mobile-close-btn"
-            onClick={() => setIsMobileMenuOpen(false)}
-          >
-            <X size={24} />
-          </button>
-        )}
-
-        {/* Logo Section */}
+      <aside className={`sidebar ${isMobileMenuOpen ? 'mobile-open' : ''}`}>
         <div className="sidebar-logo">
-          <div className="logo-circle">
-            <img src="/UpLogo.ico" alt="UP Logo" className="logo-image" />
-          </div>
+          <button type="button" className="sidebar-brand" onClick={() => openPage(null)}>
+            <span className="sidebar-logo-mark">
+              <img src="/UpLogo.ico" alt="" className="sidebar-logo-image" />
+            </span>
+            <span className="sidebar-brand-name">Universelle Peinture</span>
+          </button>
+          {isMobile && (
+            <button
+              type="button"
+              className="mobile-close-btn"
+              onClick={() => setIsMobileMenuOpen(false)}
+              aria-label="Fermer le menu"
+            >
+              <X size={22} />
+            </button>
+          )}
         </div>
 
-        {/* Navigation Menu */}
         <nav className="sidebar-nav">
-          {menuItems.map((item) => (
-            <button
-              key={item.id}
-              className={`nav-item ${activeMenuItem === item.id ? 'active' : ''}`}
-              onClick={() => handleMenuClick(item.id)}
-            >
-              {item.label}
-            </button>
+          {MENU_GROUPS.map((group) => (
+            <div key={group.label} className="nav-group">
+              <p className="nav-group-label">{group.label}</p>
+              {group.items.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    className={`nav-item ${activeItem?.id === item.id ? 'active' : ''}`}
+                    aria-current={activeItem?.id === item.id ? 'page' : undefined}
+                    onClick={() => openPage(item.id)}
+                  >
+                    <Icon size={18} className="nav-icon" />
+                    <span>{item.label}</span>
+                  </button>
+                );
+              })}
+            </div>
           ))}
         </nav>
-      </div>
+      </aside>
 
       {/* Main Content Area */}
       <div className="main-content">
-        {/* Header */}
         <header className="header">
           <div className="header-left">
-            {/* Mobile Menu Toggle */}
             {isMobile && (
-              <button 
+              <button
+                type="button"
                 className="mobile-menu-toggle"
-                onClick={toggleMobileMenu}
+                onClick={() => setIsMobileMenuOpen(true)}
+                aria-label="Ouvrir le menu"
               >
                 <Menu size={24} />
               </button>
             )}
+            <span className="header-title">{activeItem?.label ?? 'Accueil'}</span>
           </div>
           <div className="header-right">
-            <button className="notification-btn">
-              <Bell size={20} />
-            </button>
-            <button className="disconnect-btn" onClick={handleDisconnect}>
-              <LogOut size={20} />
+            <button type="button" className="disconnect-btn" onClick={logout} title="Déconnexion">
+              <LogOut size={18} />
               <span>Déconnexion</span>
             </button>
           </div>
         </header>
 
-        {/* Content Area */}
         <main className="content">
           {showLoginSuccess && (
             <div className="login-success-banner">
@@ -205,32 +228,42 @@ const Dashboard = () => {
             </div>
           )}
 
-          <div className="content-placeholder">
-            {activeMenuItem ? (
+          {ActiveComponent ? (
+            <div className="content-placeholder">
               <div className="active-content">
-                {(() => {
-                  const activeItem = menuItems.find(item => item.id === activeMenuItem);
-                  if (activeItem && activeItem.component) {
-                    const Component = activeItem.component;
-                    return <Component />;
-                  } else if (activeItem) {
-                    return (
-                      <div className="placeholder-content">
-                        <h2>Module: {activeItem.label}</h2>
-                        <p>Cette page sera développée prochainement.</p>
-                      </div>
-                    );
-                  }
-                  return null;
-                })()}
+                <ActiveComponent key={activeItem.id} />
               </div>
-            ) : (
-              <div className="welcome-content">
-                <h1>Bienvenue sur Universelle Peinture</h1>
-                <p>Sélectionnez un module dans le menu de navigation pour commencer.</p>
-              </div>
-            )}
-          </div>
+            </div>
+          ) : (
+            <div className="welcome-content">
+              <h1>Bienvenue</h1>
+              <p>Que voulez-vous faire ?</p>
+              {MENU_GROUPS.map((group) => (
+                <section key={group.label} className="welcome-group">
+                  <h2>{group.label}</h2>
+                  <div className="welcome-grid">
+                    {group.items.map((item) => {
+                      const Icon = item.icon;
+                      return (
+                        <button
+                          key={item.id}
+                          type="button"
+                          className="welcome-card"
+                          onClick={() => openPage(item.id)}
+                        >
+                          <span className="welcome-card-icon">
+                            <Icon size={22} />
+                          </span>
+                          <span className="welcome-card-label">{item.label}</span>
+                          <ChevronRight size={18} className="welcome-card-arrow" />
+                        </button>
+                      );
+                    })}
+                  </div>
+                </section>
+              ))}
+            </div>
+          )}
         </main>
       </div>
     </div>

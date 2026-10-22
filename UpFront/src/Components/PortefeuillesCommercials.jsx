@@ -49,7 +49,7 @@ const PortefeuillesCommercials = () => {
 
   return (
     <div className="portefeuilles-commercials">
-      <h1 className="page-title">Portefeuilles des Commercials</h1>
+      <h1 className="page-title">Portefeuilles commerciaux</h1>
 
       <div className="table-container">
         <table className="clients-table">

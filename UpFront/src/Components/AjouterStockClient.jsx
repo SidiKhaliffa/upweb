@@ -380,6 +380,7 @@ import React, { useState, useEffect } from "react";
 import { ChevronDown } from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
 import { API_BASE } from "../config";
+import { toast } from "../utils/toast";
 import "./AjouterStockClient.css";
 
 const API_URL = `${API_BASE}/Stock/Produits`;
@@ -471,7 +472,7 @@ const AjouterStockClient = () => {
     const { name, value } = e.target;
 
     if (value && !Number.isInteger(Number(value))) {
-      alert("La valeur doit être un nombre entier.");
+      toast.error("La valeur doit être un nombre entier.");
       return;
     }
 
@@ -589,28 +590,28 @@ const AjouterStockClient = () => {
   // Validation like ValidateInputs() in C#
   const validateInputs = () => {
     if (!formData.CodeClient.trim()) {
-      alert("Le Code Client ne peut pas être vide.");
+      toast.error("Le Code Client ne peut pas être vide.");
       return false;
     }
 
     if (!formData.description.trim()) {
-      alert("Le Conclusion ne peut pas être vide.");
+      toast.error("La conclusion ne peut pas être vide.");
       return false;
     }
 
     if (!formData.Visit_date) {
-      alert("La Date de Délivration ne peut pas être vide.");
+      toast.error("La date de visite ne peut pas être vide.");
       return false;
     }
 
     // Validate first product and quantity (required)
     if (!formData.produit1) {
-      alert("Le Produit 1 doit être sélectionné.");
+      toast.error("Le Produit 1 doit être sélectionné.");
       return false;
     }
 
     if (!formData.quantite1 || !Number.isInteger(Number(formData.quantite1))) {
-      alert("La Quantité 1 doit être un nombre entier.");
+      toast.error("La Quantité 1 doit être un nombre entier.");
       return false;
     }
 
@@ -623,7 +624,7 @@ const AjouterStockClient = () => {
         (produit && !quantite) ||
         (quantite && !Number.isInteger(Number(quantite)))
       ) {
-        alert(
+        toast.error(
           `La Quantité ${i} doit être un nombre entier si un produit est sélectionné.`
         );
         return false;
@@ -639,10 +640,14 @@ const AjouterStockClient = () => {
 
     try {
       const errorResponse = JSON.parse(errorContent);
+      if (errorResponse?.message) {
+        toast.error(errorResponse.message);
+        return;
+      }
       if (errorResponse?.errors) {
         const errorMessages = Object.values(errorResponse.errors).flat();
         if (errorMessages.length > 0) {
-          alert(errorMessages.join("\n"));
+          toast.error(errorMessages.join("\n"));
           return;
         }
       }
@@ -650,7 +655,7 @@ const AjouterStockClient = () => {
       console.log("Deserialization Error: " + ex.message);
     }
 
-    alert(`An error occurred: ${errorContent}`);
+    toast.error(errorContent || "Une erreur est survenue.");
   };
 
   const handleSubmit = async () => {
@@ -698,7 +703,7 @@ const AjouterStockClient = () => {
 
     try {
       if (getRoleClaim()?.[1] == "Admin") {
-        alert("Seuls les commerciaux peuvent ajouter du stock client.");
+        toast.error("Seuls les commerciaux peuvent ajouter du stock client.");
         return;
       }
       const response = await authFetch(
@@ -713,16 +718,15 @@ const AjouterStockClient = () => {
       );
 
       if (response.ok) {
-        alert("Les données ont été modifiées avec succès."); // Match C# success message
+        toast.success("Stock client enregistré.");
         clearInputs();
       } else {
         const errorContent = await response.text();
         handleError(response.status, errorContent);
       }
     } catch (error) {
-      console.log("payload111:", payload);
       console.error("Error:", error);
-      alert("Une erreur est survenue lors de l'ajout du stock.");
+      toast.error("Une erreur est survenue lors de l'ajout du stock.");
     }
   };
 
@@ -766,7 +770,7 @@ const AjouterStockClient = () => {
 
   return (
     <div className="ajouter-stock-client">
-      <h1 className="page-title">Ajouter au Stock Client</h1>
+      <h1 className="page-title">Stock client</h1>
 
       <div className="form-container">
         <div className="form-row">
@@ -783,7 +787,7 @@ const AjouterStockClient = () => {
           </div>
 
           <div className="form-group">
-            <label htmlFor="Visit_date">Date de Délivration*</label>
+            <label htmlFor="Visit_date">Date de visite*</label>
             <div className="date-input-container">
               <input
                 type="date"
@@ -809,114 +813,27 @@ const AjouterStockClient = () => {
           </div>
         </div>
 
-        <div className="products-grid">
-          <div className="products-column">
+        {[1, 2, 3, 4, 5, 6].map((n) => (
+          <div className="form-row product-line" key={n}>
             <div className="form-group">
-              <label htmlFor="produit1">Produit 1*</label>
-              {renderDropdown("produit1")}
+              <label htmlFor={`produit${n}`}>Produit {n}{n === 1 && "*"}</label>
+              {renderDropdown(`produit${n}`)}
             </div>
 
             <div className="form-group">
-              <label htmlFor="quantite1">Quantité 1*</label>
+              <label htmlFor={`quantite${n}`}>Qté {n}{n === 1 && "*"}</label>
               <input
                 type="text"
-                id="quantite1"
-                name="quantite1"
-                value={formData.quantite1}
-                onChange={handleNumberChange}
-                className="form-input"
-              />
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="produit2">Produit 2</label>
-              {renderDropdown("produit2")}
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="quantite2">Quantité 2</label>
-              <input
-                type="text"
-                id="quantite2"
-                name="quantite2"
-                value={formData.quantite2}
+                inputMode="numeric"
+                id={`quantite${n}`}
+                name={`quantite${n}`}
+                value={formData[`quantite${n}`]}
                 onChange={handleNumberChange}
                 className="form-input"
               />
             </div>
           </div>
-
-          <div className="products-column">
-            <div className="form-group">
-              <label htmlFor="produit3">Produit 3</label>
-              {renderDropdown("produit3")}
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="quantite3">Quantité 3</label>
-              <input
-                type="text"
-                id="quantite3"
-                name="quantite3"
-                value={formData.quantite3}
-                onChange={handleNumberChange}
-                className="form-input"
-              />
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="produit4">Produit 4</label>
-              {renderDropdown("produit4")}
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="quantite4">Quantité 4</label>
-              <input
-                type="text"
-                id="quantite4"
-                name="quantite4"
-                value={formData.quantite4}
-                onChange={handleNumberChange}
-                className="form-input"
-              />
-            </div>
-          </div>
-
-          <div className="products-column">
-            <div className="form-group">
-              <label htmlFor="produit5">Produit 5</label>
-              {renderDropdown("produit5")}
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="quantite5">Quantité 5</label>
-              <input
-                type="text"
-                id="quantite5"
-                name="quantite5"
-                value={formData.quantite5}
-                onChange={handleNumberChange}
-                className="form-input"
-              />
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="produit6">Produit 6</label>
-              {renderDropdown("produit6")}
-            </div>
-            <div className="form-group">
-              <label htmlFor="quantite6">Quantité 6</label>
-              <input
-                type="text"
-                id="quantite6"
-                name="quantite6"
-                value={formData.quantite6}
-                onChange={handleNumberChange}
-                className="form-input"
-              />
-            </div>
-          </div>
-        </div>
+        ))}
 
         <div className="form-actions">
           <button type="button" onClick={handleSubmit} className="submit-btn">
