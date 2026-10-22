@@ -9,8 +9,8 @@ const router = Router();
 // A client not visited for this many days shows up in "clients à visiter";
 // overdue clients come first, then those never visited.
 const VISIT_DELAY_DAYS = 30;
-// How many rows the home page lists show (all clients that owe money are
-// listed, though).
+// How many recettes the home page lists (clients that owe money and
+// clients to visit are all listed).
 const LIST_SIZE = 5;
 
 const isAdmin = (user) => {
@@ -101,7 +101,7 @@ router.get("/", requireAuth, async (req, res, next) => {
                 c.Visit_Date AS lastVisit
          FROM Clients c
          WHERE (c.Visit_Date IS NULL OR c.Visit_Date < ? - INTERVAL ${VISIT_DELAY_DAYS} DAY)${scope("c")}
-         ORDER BY c.Visit_Date IS NULL, c.Visit_Date LIMIT ${LIST_SIZE}`,
+         ORDER BY c.Visit_Date IS NULL, c.Visit_Date`,
         [day]
       ),
     ]);

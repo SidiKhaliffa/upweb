@@ -159,7 +159,9 @@ const Accueil = () => {
                   : null
               }
             >
+              {/* Every client to visit, longest without a visit first. */}
               <List
+                scroll
                 empty="Tous les clients ont été visités récemment."
                 items={data.visites.items.map((v) => ({
                   key: v.code,
