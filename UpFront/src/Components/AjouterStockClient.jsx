@@ -4,6 +4,7 @@ import { useProduits } from "../hooks/useProduits";
 import { API_BASE } from "../config";
 import { readErrorMessage } from "../utils/http";
 import { toast } from "../utils/toast";
+import ClientPicker from "./ClientPicker";
 import { todayIso } from "./PdfViewer";
 import {
   Actions,
@@ -93,13 +94,11 @@ const AjouterStockClient = () => {
     >
       <Form onSubmit={handleSubmit}>
         <Grid>
-          <TextField
-            label="Code client"
+          <ClientPicker
+            label="Client"
             required
-            name="CodeClient"
             value={formData.CodeClient}
-            onChange={handleInputChange}
-            autoComplete="off"
+            onChange={(code) => setFormData((prev) => ({ ...prev, CodeClient: code }))}
           />
           <TextField
             label="Date de visite"

@@ -3,6 +3,7 @@ import { useAuth } from "../hooks/useAuth";
 import { API_BASE } from "../config";
 import { readErrorMessage } from "../utils/http";
 import { toast } from "../utils/toast";
+import ClientPicker from "./ClientPicker";
 import { Actions, Button, Form, Grid, Page, TextField } from "../ui";
 
 const EMPTY_FORM = { CodeClient: "", priseCompta: "" };
@@ -56,13 +57,11 @@ const ModifierBalanceTier = () => {
     <Page title="Balance client" description="Remplace le solde comptable d'un client.">
       <Form onSubmit={handleSubmit}>
         <Grid>
-          <TextField
-            label="Code client"
+          <ClientPicker
+            label="Client"
             required
-            name="CodeClient"
             value={formData.CodeClient}
-            onChange={handleInputChange}
-            autoComplete="off"
+            onChange={(code) => setFormData((prev) => ({ ...prev, CodeClient: code }))}
           />
           <TextField
             label="Nouvelle balance (MRU)"

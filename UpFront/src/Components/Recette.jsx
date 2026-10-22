@@ -3,6 +3,7 @@ import { useAuth } from "../hooks/useAuth";
 import { API_BASE } from "../config";
 import { readErrorMessage } from "../utils/http";
 import { toast } from "../utils/toast";
+import ClientPicker from "./ClientPicker";
 import { todayIso } from "./PdfViewer";
 import { Actions, Button, Form, Grid, Page, TextField } from "../ui";
 
@@ -61,13 +62,11 @@ const Recette = () => {
     <Page title="Recette" description="Argent encaissé chez un client.">
       <Form onSubmit={handleSubmit}>
         <Grid>
-          <TextField
-            label="Code client"
+          <ClientPicker
+            label="Client"
             required
-            name="CodeClient"
             value={formData.CodeClient}
-            onChange={handleInputChange}
-            autoComplete="off"
+            onChange={(code) => setFormData((prev) => ({ ...prev, CodeClient: code }))}
           />
           <TextField
             label="Montant (MRU)"

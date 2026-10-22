@@ -5,6 +5,7 @@ import { useProduits } from "../hooks/useProduits";
 import { API_BASE } from "../config";
 import { readErrorMessage } from "../utils/http";
 import { toast } from "../utils/toast";
+import ClientPicker from "./ClientPicker";
 import PdfViewer, { todayIso } from "./PdfViewer";
 import {
   Actions,
@@ -126,13 +127,11 @@ const SuiviFactures = () => {
             value={formData.date}
             onChange={handleInputChange}
           />
-          <TextField
-            label="Code client"
+          <ClientPicker
+            label="Client"
             required
-            name="codeClient"
             value={formData.codeClient}
-            onChange={handleInputChange}
-            autoComplete="off"
+            onChange={(code) => setFormData((prev) => ({ ...prev, codeClient: code }))}
           />
           <TextField
             label="Numéro de facture"

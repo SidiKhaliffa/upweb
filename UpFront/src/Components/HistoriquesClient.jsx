@@ -1,11 +1,12 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import { Search } from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
 import { API_BASE } from "../config";
 import { readErrorMessage } from "../utils/http";
 import { toast } from "../utils/toast";
 import { formatAmount, formatNumber } from "../utils/format";
-import { Alert, Button, DataTable, Form, Grid, Page, Section, TextField } from "../ui";
+import ClientPicker from "./ClientPicker";
+import { Alert, Button, DataTable, Form, Grid, Page, Section } from "../ui";
 
 // The server ends the list with a "Chiffre D'affaire" total row.
 const isTotalRow = (row) => row.produit === "Chiffre D'affaire";
@@ -31,9 +32,12 @@ const HistoriquesClient = () => {
   const [result, setResult] = useState(null); // { code, rows, total }
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  // Name of the client picked in the list, for the results title.
+  const picked = useRef(null);
 
-  const handleSearch = async () => {
-    const code = codeClient.trim();
+  // Picking a client in the list searches right away.
+  const handleSearch = async (pickedCode) => {
+    const code = (pickedCode ?? codeClient).trim();
     if (!code) {
       toast.error("Veuillez entrer un code client.");
       return;
@@ -54,6 +58,7 @@ const HistoriquesClient = () => {
       const rows = Array.isArray(data) ? data : [];
       setResult({
         code,
+        name: picked.current?.code === code ? picked.current.name : null,
         rows: rows.filter((row) => !isTotalRow(row)),
         total: rows.find(isTotalRow),
       });
@@ -69,13 +74,15 @@ const HistoriquesClient = () => {
     <Page title="Historique client" description="Tous les produits livrés à un client.">
       <Form onSubmit={handleSearch}>
         <Grid>
-          <TextField
-            label="Code client"
+          <ClientPicker
+            label="Client"
             required
             value={codeClient}
-            onChange={(e) => setCodeClient(e.target.value)}
-            autoComplete="off"
-            enterKeyHint="search"
+            onChange={setCodeClient}
+            onSelect={(client) => {
+              picked.current = client;
+              handleSearch(client.code);
+            }}
           />
         </Grid>
         <div>
@@ -88,7 +95,7 @@ const HistoriquesClient = () => {
       {error && <Alert>{error}</Alert>}
 
       {result && (
-        <Section title={`Client ${result.code}`}>
+        <Section title={result.name ? `${result.name} (${result.code})` : `Client ${result.code}`}>
           <DataTable
             columns={COLUMNS}
             rows={result.rows}

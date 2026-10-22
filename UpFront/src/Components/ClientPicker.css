@@ -1,0 +1,116 @@
+/* ClientPicker.css — "Code client" field with search */
+
+.client-picker {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.client-picker-input {
+  position: relative;
+}
+
+.client-picker-input .ui-input {
+  padding-left: 38px;
+  padding-right: 40px;
+}
+
+.client-picker-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--ui-text-muted);
+  pointer-events: none;
+}
+
+.client-picker-clear {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--ui-text-muted);
+  cursor: pointer;
+}
+
+.client-picker-clear:hover {
+  background: var(--ui-surface-alt);
+  color: var(--ui-text);
+}
+
+.client-picker-list {
+  position: absolute;
+  top: 48px;
+  left: 0;
+  right: 0;
+  z-index: 30;
+  max-height: 320px;
+  overflow-y: auto;
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  background: var(--ui-surface);
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.14);
+}
+
+.client-picker-option {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px;
+  min-height: 44px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.client-picker-option.active {
+  background: var(--ui-primary-soft);
+}
+
+.client-picker-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ui-text);
+}
+
+.client-picker-meta {
+  font-size: 13px;
+  color: var(--ui-text-muted);
+}
+
+.client-picker-meta strong {
+  color: var(--ui-primary);
+}
+
+.client-picker-empty {
+  padding: 12px;
+  font-size: 14px;
+  color: var(--ui-text-muted);
+}
+
+/* Confirms which client the code belongs to. */
+.client-picker-selected {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px;
+  border-radius: var(--ui-radius);
+  border-left: 4px solid var(--ui-success);
+  background: var(--ui-success-soft);
+}
+
+.client-picker-due {
+  font-weight: 600;
+  color: var(--ui-danger);
+}
