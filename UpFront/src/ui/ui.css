@@ -742,3 +742,11 @@ textarea.ui-input {
   font-size: 13px;
   color: var(--ui-text-muted);
 }
+
+/* Long lists scroll inside their card instead of stretching the page. */
+.ui-list-scroll {
+  max-height: 420px;
+  overflow-y: auto;
+  padding-right: 6px;
+  overscroll-behavior: contain;
+}

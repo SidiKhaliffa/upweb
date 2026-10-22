@@ -134,12 +134,10 @@ const Accueil = () => {
               />
             </Card>
 
-            <Card
-              title="Soldes à recouvrer"
-              count={plural(data.soldes.count, "client")}
-              footer={data.soldes.count > data.soldes.items.length ? "Les plus gros montants dus." : null}
-            >
+            <Card title="Soldes à recouvrer" count={plural(data.soldes.count, "client")}>
+              {/* Every client that owes money, biggest amount first. */}
               <List
+                scroll
                 empty="Aucun client ne doit d'argent."
                 items={data.soldes.items.map((s) => ({
                   key: s.code,

@@ -9,7 +9,8 @@ const router = Router();
 // A client not visited for this many days shows up in "clients à visiter";
 // overdue clients come first, then those never visited.
 const VISIT_DELAY_DAYS = 30;
-// How many rows each list of the home page shows.
+// How many rows the home page lists show (all clients that owe money are
+// listed, though).
 const LIST_SIZE = 5;
 
 const isAdmin = (user) => {
@@ -88,7 +89,7 @@ router.get("/", requireAuth, async (req, res, next) => {
       pool.query(
         `SELECT p.Code AS code, p.name, p.zone, p.phone, p.PricePayer AS amount
          FROM portFeuilleClients p WHERE p.PricePayer > 0${scope("p")}
-         ORDER BY p.PricePayer DESC LIMIT ${LIST_SIZE}`
+         ORDER BY p.PricePayer DESC`
       ),
       pool.query(
         `SELECT COUNT(*) AS count, COALESCE(SUM(c.Visit_Date IS NULL), 0) AS never FROM Clients c

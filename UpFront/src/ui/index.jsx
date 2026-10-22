@@ -165,11 +165,12 @@ export const CallButton = ({ phone, name }) =>
 /**
  * Short list of people or items: title, grey line, value on the right,
  * and a call button when there is a phone number.
- * items: [{ key, title, meta, value, phone }]
+ * items: [{ key, title, meta, value, phone }]; scroll caps the height for
+ * long lists.
  */
-export const List = ({ items, empty }) =>
+export const List = ({ items, empty, scroll }) =>
   items.length ? (
-    <ul className="ui-list">
+    <ul className={`ui-list${scroll ? " ui-list-scroll" : ""}`}>
       {items.map((item) => (
         <li key={item.key} className="ui-list-item">
           <div className="ui-list-main">
