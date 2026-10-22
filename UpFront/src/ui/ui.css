@@ -630,3 +630,115 @@ textarea.ui-input {
     flex-basis: 100%;
   }
 }
+
+/* ---------- Cards and lists (home page) ---------- */
+
+.ui-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+  padding: 20px;
+  background: var(--ui-surface);
+  border: 1px solid var(--ui-border-soft);
+  border-radius: var(--ui-radius-lg);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
+}
+
+.ui-card-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.ui-card-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--ui-text);
+}
+
+.ui-card-count {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ui-text-muted);
+  white-space: nowrap;
+}
+
+.ui-card-footer {
+  margin: 0;
+  font-size: 13px;
+  color: var(--ui-text-muted);
+}
+
+.ui-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.ui-list-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-top: 1px solid var(--ui-border-soft);
+}
+
+.ui-list-item:first-child {
+  border-top: none;
+  padding-top: 0;
+}
+
+.ui-list-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.ui-list-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ui-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ui-list-meta {
+  margin-top: 2px;
+  font-size: 13px;
+  color: var(--ui-text-muted);
+}
+
+.ui-list-value {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ui-primary);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* Round "call" button next to a client. */
+.ui-call {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--ui-success-soft);
+  color: var(--ui-success);
+  text-decoration: none;
+}
+
+.ui-call:hover {
+  background: #d3ecd5;
+}
+
+.ui-stat-hint {
+  margin-top: 2px;
+  font-size: 13px;
+  color: var(--ui-text-muted);
+}

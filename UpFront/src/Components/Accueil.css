@@ -1,0 +1,76 @@
+/* Accueil.css — home page */
+
+.accueil {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 1200px;
+}
+
+.accueil-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.accueil-header h1 {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 600;
+  color: var(--ui-primary);
+}
+
+.accueil-date {
+  margin: 4px 0 0;
+  font-size: 15px;
+  color: var(--ui-text-muted);
+}
+
+.accueil-date::first-letter {
+  text-transform: uppercase;
+}
+
+/* The stat tiles sit on the grey background: make them white cards. */
+.accueil .ui-stat {
+  background: var(--ui-surface);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
+}
+
+.accueil-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: 16px;
+}
+
+@media (max-width: 640px) {
+  .accueil {
+    gap: 16px;
+  }
+
+  .accueil-header h1 {
+    font-size: 22px;
+  }
+
+  .accueil .ui-stats {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .accueil .ui-stat {
+    padding: 12px;
+  }
+
+  .accueil .ui-stat-value {
+    font-size: 18px;
+  }
+
+  .accueil-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .accueil .ui-card {
+    padding: 16px;
+  }
+}

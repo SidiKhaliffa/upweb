@@ -28,6 +28,7 @@ import HistoriquesClient from '../Components/HistoriquesClient';
 import SuiviFactures from '../Components/SuiviFactures';
 import Statistiques from '../Components/Statistiques';
 import Peintres from '../Components/Peintres';
+import Accueil from '../Components/Accueil';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import './Dashboard.css';
@@ -236,8 +237,8 @@ const Dashboard = () => {
             </div>
           ) : (
             <div className="welcome-content">
-              <h1>Bienvenue</h1>
-              <p>Que voulez-vous faire ?</p>
+              <Accueil />
+              <h2 className="welcome-title">Accès rapide</h2>
               {MENU_GROUPS.map((group) => (
                 <section key={group.label} className="welcome-group">
                   <h2>{group.label}</h2>

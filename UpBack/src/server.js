@@ -12,6 +12,7 @@ import factureRoutes from "./routes/facture.routes.js";
 import commercesRoutes from "./routes/commerces.routes.js";
 import statistiqueRoutes from "./routes/statistique.routes.js";
 import peintresRoutes from "./routes/peintres.routes.js";
+import accueilRoutes from "./routes/accueil.routes.js";
 
 const app = express();
 
@@ -34,6 +35,7 @@ app.use("/api/Facture", factureRoutes);
 app.use("/api/Commerces", commercesRoutes);
 app.use("/api/Statistique", statistiqueRoutes);
 app.use("/api/Peintres", peintresRoutes);
+app.use("/api/Accueil", accueilRoutes);
 
 app.get("/health", (req, res) => res.json({ status: "ok" }));
 

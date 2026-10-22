@@ -1,5 +1,5 @@
 import React, { useId } from "react";
-import { Plus, X } from "lucide-react";
+import { Phone, Plus, X } from "lucide-react";
 import "./ui.css";
 
 /* Shared building blocks, so every page looks and behaves the same.
@@ -133,14 +133,57 @@ export const Empty = ({ children }) => <p className="ui-empty">{children}</p>;
 
 export const Stats = ({ items }) => (
   <div className="ui-stats">
-    {items.map(({ label, value }) => (
+    {items.map(({ label, value, hint }) => (
       <div key={label} className="ui-stat">
         <div className="ui-stat-label">{label}</div>
         <div className="ui-stat-value">{value}</div>
+        {hint && <div className="ui-stat-hint">{hint}</div>}
       </div>
     ))}
   </div>
 );
+
+export const Card = ({ title, count, footer, children }) => (
+  <section className="ui-card">
+    <div className="ui-card-header">
+      <h2 className="ui-card-title">{title}</h2>
+      {count != null && <span className="ui-card-count">{count}</span>}
+    </div>
+    {children}
+    {footer && <p className="ui-card-footer">{footer}</p>}
+  </section>
+);
+
+// Phone link that opens the dialer on a phone.
+export const CallButton = ({ phone, name }) =>
+  phone ? (
+    <a className="ui-call" href={`tel:${phone.replace(/s+/g, "")}`} aria-label={`Appeler ${name}`} title={phone}>
+      <Phone size={18} />
+    </a>
+  ) : null;
+
+/**
+ * Short list of people or items: title, grey line, value on the right,
+ * and a call button when there is a phone number.
+ * items: [{ key, title, meta, value, phone }]
+ */
+export const List = ({ items, empty }) =>
+  items.length ? (
+    <ul className="ui-list">
+      {items.map((item) => (
+        <li key={item.key} className="ui-list-item">
+          <div className="ui-list-main">
+            <div className="ui-list-title">{item.title}</div>
+            {item.meta && <div className="ui-list-meta">{item.meta}</div>}
+          </div>
+          {item.value != null && <span className="ui-list-value">{item.value}</span>}
+          <CallButton phone={item.phone} name={item.title} />
+        </li>
+      ))}
+    </ul>
+  ) : (
+    <Empty>{empty}</Empty>
+  );
 
 /**
  * Table that turns into one card per row on narrow screens.
