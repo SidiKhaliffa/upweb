@@ -6,9 +6,9 @@ import { parseDateInput, dayOf, toNetDateTime } from "../utils/dates.js";
 
 const router = Router();
 
-// A client not visited for this many days shows up in "clients à visiter";
-// overdue clients come first, then those never visited.
-const VISIT_DELAY_DAYS = 30;
+// A client whose last visit was this many days ago or more (or who was
+// never visited) shows up in "clients à visiter", overdue clients first.
+const VISIT_DELAY_DAYS = 14;
 // How many recettes the home page lists (clients that owe money and
 // clients to visit are all listed).
 const LIST_SIZE = 5;
@@ -93,14 +93,14 @@ router.get("/", requireAuth, async (req, res, next) => {
       ),
       pool.query(
         `SELECT COUNT(*) AS count, COALESCE(SUM(c.Visit_Date IS NULL), 0) AS never FROM Clients c
-         WHERE (c.Visit_Date IS NULL OR c.Visit_Date < ? - INTERVAL ${VISIT_DELAY_DAYS} DAY)${scope("c")}`,
+         WHERE (c.Visit_Date IS NULL OR c.Visit_Date < ? - INTERVAL ${VISIT_DELAY_DAYS - 1} DAY)${scope("c")}`,
         [day]
       ),
       pool.query(
         `SELECT c.Code AS code, c.Respnsible_Name AS name, c.Zone AS zone, c.Phone_Number AS phone,
                 c.Visit_Date AS lastVisit
          FROM Clients c
-         WHERE (c.Visit_Date IS NULL OR c.Visit_Date < ? - INTERVAL ${VISIT_DELAY_DAYS} DAY)${scope("c")}
+         WHERE (c.Visit_Date IS NULL OR c.Visit_Date < ? - INTERVAL ${VISIT_DELAY_DAYS - 1} DAY)${scope("c")}
          ORDER BY c.Visit_Date IS NULL, c.Visit_Date`,
         [day]
       ),
