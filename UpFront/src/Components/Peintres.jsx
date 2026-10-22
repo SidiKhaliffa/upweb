@@ -1,13 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { Search } from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
+import { API_BASE } from "../config";
 import "./Peintres.css";
 
-// Peintres only exists on the new Node backend (UpBack), not on the .NET
-// API the other components call.
-const API_URL = `${
-  import.meta.env.VITE_UPBACK_URL || "http://localhost:3000/api"
-}/Peintres`;
+const API_URL = `${API_BASE}/Peintres`;
 
 const EMPTY_FORM = { nom: "", telephone: "", telephone2: "" };
 
