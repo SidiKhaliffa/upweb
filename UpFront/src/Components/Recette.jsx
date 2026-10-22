@@ -1,134 +1,102 @@
-import React, { useState, useEffect } from "react";
-import "./Recette.css";
+import React, { useState } from "react";
 import { useAuth } from "../hooks/useAuth";
 import { API_BASE } from "../config";
 import { readErrorMessage } from "../utils/http";
 import { toast } from "../utils/toast";
+import { todayIso } from "./PdfViewer";
+import { Actions, Button, Form, Grid, Page, TextField } from "../ui";
+
+const emptyForm = () => ({ CodeClient: "", priseCompta: "", Recette_Date: todayIso() });
 
 const Recette = () => {
-  const { authFetch, ensureFreshToken, getRoleClaim } = useAuth();
-  const [formData, setFormData] = useState({
-    CodeClient: "",
-    priseCompta: "",
-    Recette_Date: "",
-  });
-
-  useEffect(() => {
-    ensureFreshToken();
-  }, []);
+  const { authFetch, getRoleClaim } = useAuth();
+  const [formData, setFormData] = useState(emptyForm);
+  const [saving, setSaving] = useState(false);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async () => {
-    console.log("Recette data:", formData);
-    if (!formData.Recette_Date) {
-      toast.error("Veuillez sélectionner une date de recette.");
-      return;
-    } else if (
-      !formData.priseCompta ||
-      isNaN(formData.priseCompta) ||
-      Number(formData.priseCompta) <= 0
-    ) {
-      toast.error("Veuillez entrer un montant de recette valide.");
-      return;
-    } else if (!formData.CodeClient) {
+    if (!formData.CodeClient.trim()) {
       toast.error("Veuillez entrer un code client.");
       return;
     }
+    if (!(Number(formData.priseCompta) > 0)) {
+      toast.error("Veuillez entrer un montant de recette valide.");
+      return;
+    }
+    if (!formData.Recette_Date) {
+      toast.error("Veuillez sélectionner une date de recette.");
+      return;
+    }
+    if (getRoleClaim()?.[1] == "Admin") {
+      toast.error("Vous n'avez pas les droits nécessaires pour enregistrer une recette.");
+      return;
+    }
 
+    setSaving(true);
     try {
-      if (getRoleClaim()?.[1] == "Admin") {
-        toast.error(
-          "Vous n'avez pas les droits nécessaires pour enregistrer une recette."
-        );
-        return;
-      }
-      const response = await authFetch(
-        `${API_BASE}/Stock/recette`,
-        {
-          method: "POST",
-          headers: {
-            "content-type": "application/json",
-          },
-          body: JSON.stringify(formData),
-        }
-      );
+      const response = await authFetch(`${API_BASE}/Stock/recette`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
       if (response.ok) {
         toast.success("Recette enregistrée.");
-        setFormData({
-          CodeClient: "",
-          priseCompta: "",
-          Recette_Date: "",
-        });
+        setFormData(emptyForm());
       } else {
         toast.error(await readErrorMessage(response));
       }
     } catch (error) {
       console.error("Error:", error);
       toast.error("Erreur lors de l'enregistrement de la recette.");
+    } finally {
+      setSaving(false);
     }
   };
 
   return (
-    <div className="recette">
-      <h1 className="page-title">Recette</h1>
-
-      <div className="form-container">
-        <div className="form-group">
-          <label htmlFor="CodeClient">Code Client</label>
-          <input
-            type="text"
-            id="CodeClient"
+    <Page title="Recette" description="Argent encaissé chez un client.">
+      <Form onSubmit={handleSubmit}>
+        <Grid>
+          <TextField
+            label="Code client"
+            required
             name="CodeClient"
             value={formData.CodeClient}
             onChange={handleInputChange}
-            className="form-input"
-            placeholder="Entrez le code client"
+            autoComplete="off"
           />
-        </div>
-
-        <div className="form-group">
-          <label htmlFor="priseCompta">Montant de la Recette</label>
-          <input
+          <TextField
+            label="Montant (MRU)"
+            required
             type="number"
-            id="priseCompta"
+            inputMode="decimal"
+            step="0.01"
+            min="0"
             name="priseCompta"
             value={formData.priseCompta}
             onChange={handleInputChange}
-            className="form-input"
-            placeholder="Entrez le montant de la recette"
-            step="0.01"
           />
-        </div>
-
-        <div className="form-group">
-          <label htmlFor="Recette_Date">Date de Recette*</label>
-          <div className="date-input-container">
-            <input
-              type="date"
-              id="Recette_Date"
-              name="Recette_Date"
-              value={formData.Recette_Date}
-              onChange={handleInputChange}
-              className="form-input date-input"
-            />
-            {/* <Calendar className="date-icon" size={20} /> */}
-          </div>
-        </div>
-
-        <div className="form-actions">
-          <button type="button" onClick={handleSubmit} className="submit-btn">
-            Enregistrer
-          </button>
-        </div>
-      </div>
-    </div>
+          <TextField
+            label="Date"
+            required
+            type="date"
+            name="Recette_Date"
+            value={formData.Recette_Date}
+            max={todayIso()}
+            onChange={handleInputChange}
+          />
+        </Grid>
+        <Actions>
+          <Button type="submit" loading={saving}>
+            Enregistrer la recette
+          </Button>
+        </Actions>
+      </Form>
+    </Page>
   );
 };
 

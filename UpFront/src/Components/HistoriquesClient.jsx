@@ -1,180 +1,114 @@
-import React, { useState, useEffect } from "react";
-import "./HistoriquesClient.css";
+import React, { useState } from "react";
+import { Search } from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
 import { API_BASE } from "../config";
+import { readErrorMessage } from "../utils/http";
 import { toast } from "../utils/toast";
 import { formatAmount, formatNumber } from "../utils/format";
+import { Alert, Button, DataTable, Form, Grid, Page, Section, TextField } from "../ui";
 
-const HistoriquesClient = ({ authToken }) => {
-  const { authFetch, ensureFreshToken } = useAuth();
-  const [formData, setFormData] = useState({
-    codeClient: "",
-  });
+// The server ends the list with a "Chiffre D'affaire" total row.
+const isTotalRow = (row) => row.produit === "Chiffre D'affaire";
 
-  const [searchResults, setSearchResults] = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
+// Dates come as "YYYY-MM-DDTHH:mm:ss"; year 1 means "no date".
+const formatDay = (value) => {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime()) || date.getFullYear() < 1900) return "—";
+  return date.toLocaleDateString("fr-FR");
+};
+
+const COLUMNS = [
+  { key: "date", label: "Date", render: (row) => formatDay(row.date) },
+  { key: "produit", label: "Produit", primary: true },
+  { key: "quantite", label: "Quantité", align: "right", render: (row) => formatNumber(row.quantite) },
+  { key: "montant", label: "Montant", align: "right", render: (row) => formatAmount(row.montant) },
+  { key: "commercial", label: "Commercial", render: (row) => row.commercial || "—" },
+];
+
+const HistoriquesClient = () => {
+  const { authFetch } = useAuth();
+  const [codeClient, setCodeClient] = useState("");
+  const [result, setResult] = useState(null); // { code, rows, total }
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    ensureFreshToken();
-  }, []);
-
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
-
-  const handleRechercher = async () => {
-    if (!formData.codeClient.trim()) {
+  const handleSearch = async () => {
+    const code = codeClient.trim();
+    if (!code) {
       toast.error("Veuillez entrer un code client.");
       return;
     }
 
-    console.log("Recherche historique pour client:", formData.codeClient);
-    setIsLoading(true);
+    setLoading(true);
     setError(null);
-
     try {
       const response = await authFetch(
-        `${API_BASE}/Historique?codeclient=${formData.codeClient}`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
+        `${API_BASE}/Historique?codeclient=${encodeURIComponent(code)}`
       );
-
-      if (response.ok) {
-        const data = await response.json();
-        console.log("Données reçues:", data);
-        setSearchResults(data);
-      } else {
-        throw new Error(`HTTP error! status: ${response.status}`);
+      if (!response.ok) {
+        setResult(null);
+        setError(await readErrorMessage(response));
+        return;
       }
-    } catch (error) {
-      console.error("Error:", error);
+      const data = await response.json();
+      const rows = Array.isArray(data) ? data : [];
+      setResult({
+        code,
+        rows: rows.filter((row) => !isTotalRow(row)),
+        total: rows.find(isTotalRow),
+      });
+    } catch (err) {
+      console.error("Error:", err);
       setError("Erreur lors de la récupération de l'historique.");
-
-      if (!authToken) {
-        setSearchResults([
-          {
-            produit: "Chiffre D'affaire",
-            quantite: 0,
-            montant: 0,
-            date: "1/1/0001 12:00:00 AM",
-          },
-        ]);
-      }
     } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleRetourner = () => {
-    setSearchResults(null);
-    setError(null);
-    setFormData({ codeClient: "" });
-  };
-
-  const formatDate = (dateString) => {
-    if (dateString === "1/1/0001 12:00:00 AM") {
-      return "N/A";
-    }
-    try {
-      const date = new Date(dateString);
-      return (
-        date.toLocaleDateString("fr-FR") +
-        " " +
-        date.toLocaleTimeString("fr-FR")
-      );
-    } catch {
-      return dateString;
+      setLoading(false);
     }
   };
 
   return (
-    <div className="historiques-client">
-      <h1 className="page-title">Historique client</h1>
-
-      {error && <div className="error-message">{error}</div>}
-
-      {!searchResults ? (
-        <div className="search-container">
-          <div className="form-group">
-            <label htmlFor="codeClient">Code de Client</label>
-            <input
-              type="text"
-              id="codeClient"
-              name="codeClient"
-              value={formData.codeClient}
-              onChange={handleInputChange}
-              className="form-input"
-              placeholder="Entrez le code client"
-              disabled={isLoading}
-            />
-          </div>
-
-          <div className="search-actions">
-            <button
-              type="button"
-              onClick={handleRechercher}
-              className="search-btn"
-              disabled={isLoading}
-            >
-              {isLoading ? "Recherche..." : "Rechercher"}
-            </button>
-          </div>
+    <Page title="Historique client" description="Tous les produits livrés à un client.">
+      <Form onSubmit={handleSearch}>
+        <Grid>
+          <TextField
+            label="Code client"
+            required
+            value={codeClient}
+            onChange={(e) => setCodeClient(e.target.value)}
+            autoComplete="off"
+            enterKeyHint="search"
+          />
+        </Grid>
+        <div>
+          <Button type="submit" icon={Search} loading={loading}>
+            Rechercher
+          </Button>
         </div>
-      ) : (
-        <div className="results-container">
-          <div className="results-header">
-            <h2>Historique pour le client: {formData.codeClient}</h2>
-            <button
-              type="button"
-              onClick={handleRetourner}
-              className="return-btn"
-            >
-              Retourner
-            </button>
-          </div>
+      </Form>
 
-          <div className="table-container">
-            <table className="history-table">
-              <thead>
-                <tr>
-                  <th>Produit</th>
-                  <th>Quantité</th>
-                  <th>Montant</th>
-                  <th>Date</th>
-                </tr>
-              </thead>
-              <tbody>
-                {searchResults.length > 0 ? (
-                  searchResults.map((item, index) => (
-                    <tr key={index}>
-                      <td className="product-name">{item.produit}</td>
-                      <td className="quantity">{formatNumber(item.quantite)}</td>
-                      <td className="amount">{formatAmount(item.montant)}</td>
-                      <td className="date">{formatDate(item.date)}</td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan="4" className="no-data">
-                      Aucun historique trouvé pour ce client
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
+      {error && <Alert>{error}</Alert>}
+
+      {result && (
+        <Section title={`Client ${result.code}`}>
+          <DataTable
+            columns={COLUMNS}
+            rows={result.rows}
+            empty="Aucun historique pour ce client."
+            footer={
+              result.total && result.rows.length > 0
+                ? {
+                    produit: "Total",
+                    // The server's total row carries no quantity.
+                    quantite: formatNumber(
+                      result.rows.reduce((sum, row) => sum + (Number(row.quantite) || 0), 0)
+                    ),
+                    montant: formatAmount(result.total.montant),
+                  }
+                : null
+            }
+          />
+        </Section>
       )}
-    </div>
+    </Page>
   );
 };
 

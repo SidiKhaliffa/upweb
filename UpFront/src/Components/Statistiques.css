@@ -4,8 +4,6 @@
   /* Breakpoints below follow the page width, not the screen: the sidebar
      stays open down to 768px and eats 280px of it. */
   container-type: inline-size;
-  background-color: #f8f9fa;
-  min-height: 100vh;
   display: flex;
   flex-direction: column;
   gap: 24px;
@@ -17,8 +15,8 @@
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding-bottom: 15px;
-  border-bottom: 2px solid #e1e5e9;
+  padding-bottom: 14px;
+  border-bottom: 1px solid #e1e5e9;
 }
 
 .statistiques .page-title {
@@ -26,7 +24,7 @@
   border: none;
   padding: 0;
   text-align: left;
-  font-size: 28px;
+  font-size: 22px;
   color: #1e4a72;
   font-weight: 600;
   margin: 0;
@@ -302,14 +300,17 @@
   font-size: 14px;
 }
 
+/* Same header style as the other tables (ui.css). */
 .statistiques .stats-table thead {
-  background: linear-gradient(135deg, #1e4a72, #2d5aa0);
-  color: white;
+  background: #f5f7fa;
+  color: #6b7785;
 }
 
 .statistiques .stats-table th {
-  padding: 14px 16px;
+  padding: 12px 16px;
+  border-bottom: 1px solid #e1e5e9;
   text-align: left;
+  font-size: 13px;
   font-weight: 600;
   white-space: nowrap;
 }
@@ -320,7 +321,8 @@
 }
 
 .statistiques .stats-table th.sortable:hover {
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: #e8eff8;
+  color: #1e4a72;
 }
 
 .statistiques .stats-table th svg {
@@ -387,7 +389,7 @@
   }
 
   .statistiques .page-title {
-    font-size: 22px;
+    font-size: 19px;
   }
 
   .statistiques .refresh-button span {

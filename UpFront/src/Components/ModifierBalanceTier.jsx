@@ -1,103 +1,87 @@
-import React, { useState, useEffect } from "react";
-import "./ModifierBalanceTier.css";
+import React, { useState } from "react";
 import { useAuth } from "../hooks/useAuth";
 import { API_BASE } from "../config";
 import { readErrorMessage } from "../utils/http";
 import { toast } from "../utils/toast";
+import { Actions, Button, Form, Grid, Page, TextField } from "../ui";
+
+const EMPTY_FORM = { CodeClient: "", priseCompta: "" };
 
 const ModifierBalanceTier = () => {
-  const { authFetch, ensureFreshToken, getRoleClaim } = useAuth();
-  const [formData, setFormData] = useState({
-    CodeClient: "",
-    priseCompta: "",
-  });
-
-  useEffect(() => {
-    ensureFreshToken();
-  }, []);
+  const { authFetch, getRoleClaim } = useAuth();
+  const [formData, setFormData] = useState(EMPTY_FORM);
+  const [saving, setSaving] = useState(false);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async () => {
-    // Handle form submission here
+    if (!formData.CodeClient.trim()) {
+      toast.error("Veuillez entrer un code client.");
+      return;
+    }
+    if (formData.priseCompta === "" || !Number.isFinite(Number(formData.priseCompta))) {
+      toast.error("Veuillez entrer un montant valide.");
+      return;
+    }
+    if (getRoleClaim()?.[1] == "Admin") {
+      toast.error("Vous n'avez pas les droits nécessaires pour modifier la balance.");
+      return;
+    }
+
+    setSaving(true);
     try {
-      if (getRoleClaim()?.[1] == "Admin") {
-        toast.error(
-          "Vous n'avez pas les droits nécessaires pour modifier la balance."
-        );
-        return;
-      }
-      const response = await authFetch(
-        `${API_BASE}/Stock/PriseCompta`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(formData),
-        }
-      );
-      // const data = await response.json();
+      const response = await authFetch(`${API_BASE}/Stock/PriseCompta`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
       if (response.ok) {
         toast.success("Balance du client modifiée.");
-        setFormData({
-          CodeClient: "",
-          priseCompta: "",
-        });
+        setFormData(EMPTY_FORM);
       } else {
         toast.error(await readErrorMessage(response));
       }
     } catch (error) {
       console.error("Error:", error);
       toast.error("Une erreur est survenue lors de la modification de la balance.");
+    } finally {
+      setSaving(false);
     }
   };
 
   return (
-    <div className="modifier-balance-tier">
-      <h1 className="page-title">Balance client</h1>
-
-      <div className="form-container">
-        <div className="form-group">
-          <label htmlFor="CodeClient">Code Client</label>
-          <input
-            type="text"
-            id="CodeClient"
+    <Page title="Balance client" description="Remplace le solde comptable d'un client.">
+      <Form onSubmit={handleSubmit}>
+        <Grid>
+          <TextField
+            label="Code client"
+            required
             name="CodeClient"
             value={formData.CodeClient}
             onChange={handleInputChange}
-            className="form-input"
-            placeholder="Entrez le code client"
+            autoComplete="off"
           />
-        </div>
-
-        <div className="form-group">
-          <label htmlFor="priseCompta">Montant de la Balance</label>
-          <input
+          <TextField
+            label="Nouvelle balance (MRU)"
+            required
             type="number"
-            id="priseCompta"
+            inputMode="decimal"
+            step="0.01"
             name="priseCompta"
             value={formData.priseCompta}
             onChange={handleInputChange}
-            className="form-input"
-            placeholder="Entrez le montant"
-            step="0.01"
           />
-        </div>
-
-        <div className="form-actions">
-          <button type="button" onClick={handleSubmit} className="submit-btn">
-            Enregistrer
-          </button>
-        </div>
-      </div>
-    </div>
+        </Grid>
+        <Actions>
+          <Button type="submit" loading={saving}>
+            Enregistrer la balance
+          </Button>
+        </Actions>
+      </Form>
+    </Page>
   );
 };
 

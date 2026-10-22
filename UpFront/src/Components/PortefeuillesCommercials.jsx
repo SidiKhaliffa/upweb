@@ -1,101 +1,80 @@
 import React, { useState, useEffect, useCallback } from "react";
-import "./PortefeuillesCommercials.css";
+import { FileText, Wallet } from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
 import { API_BASE } from "../config";
 import PdfViewer from "./PdfViewer";
+import { Alert, Button, DataTable, Page } from "../ui";
 
 const PortefeuillesCommercials = () => {
-  const { authFetch, ensureFreshToken } = useAuth();
-  const [commercialistes, setCommercialistes] = useState([]);
+  const { authFetch } = useAuth();
+  const [commerciaux, setCommerciaux] = useState(null);
+  const [error, setError] = useState(null);
   const [pdf, setPdf] = useState(null);
   const closePdf = useCallback(() => setPdf(null), []);
 
   useEffect(() => {
-    ensureFreshToken();
+    (async () => {
+      try {
+        const response = await authFetch(`${API_BASE}/Commerces`);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        setCommerciaux(await response.json());
+      } catch (err) {
+        console.error("Error fetching commerciaux:", err);
+        setError("Impossible de charger la liste des commerciaux.");
+      }
+    })();
   }, []);
 
-  const fetchCommercialistes = async () => {
-    try {
-      const response = await authFetch(
-        `${API_BASE}/Commerces`,
-        {
-          method: "GET",
-        }
-      );
-      const data = await response.json();
-      setCommercialistes(data);
-    } catch (error) {
-      console.error("Error fetching commercialistes:", error);
-    }
-  };
-
-  useEffect(() => {
-    fetchCommercialistes();
-  }, []);
-
-  const handleRecette = (id, nom) =>
+  const showRecette = ({ id, nom }) =>
     setPdf({
       title: `Recette – ${nom}`,
       url: `${API_BASE}/Commerces/GenerateRecettePdf?idcomerce=${id}`,
       fileName: `Recette_${nom}.pdf`,
     });
 
-  const handlePortefeuille = (id, nom) =>
+  const showPortefeuille = ({ id, nom }) =>
     setPdf({
       title: `Portefeuille – ${nom}`,
       url: `${API_BASE}/Commerces/GenerateRecapPdf?idcomerce=${id}`,
       fileName: `Portefeuille_${nom}.pdf`,
     });
 
+  const columns = [
+    { key: "nom", label: "Commercial", primary: true },
+    { key: "telephone", label: "Téléphone", render: (row) => row.telephone || "—" },
+    {
+      key: "actions",
+      label: "Documents",
+      actions: true,
+      render: (row) => (
+        <div className="ui-actions-inline">
+          <Button variant="secondary" size="sm" icon={FileText} onClick={() => showRecette(row)}>
+            Recette
+          </Button>
+          <Button variant="secondary" size="sm" icon={Wallet} onClick={() => showPortefeuille(row)}>
+            Portefeuille
+          </Button>
+        </div>
+      ),
+    },
+  ];
+
   return (
-    <div className="portefeuilles-commercials">
-      <h1 className="page-title">Portefeuilles commerciaux</h1>
-
-      <div className="table-container">
-        <table className="clients-table">
-          <thead>
-            <tr>
-              <th>Nom et Prénom</th>
-              <th>Numéro de Téléphone</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {commercialistes.map((commercialiste) => (
-              <tr key={commercialiste.id}>
-                <td>{commercialiste.nom}</td>
-                <td>{commercialiste.telephone}</td>
-                <td>
-                  <div className="action-buttons">
-                    <button
-                      className="action-btn recette-btn"
-                      onClick={() =>
-                        handleRecette(commercialiste.id, commercialiste.nom)
-                      }
-                    >
-                      Recette
-                    </button>
-                    <button
-                      className="action-btn portefeuille-btn"
-                      onClick={() =>
-                        handlePortefeuille(
-                          commercialiste.id,
-                          commercialiste.nom
-                        )
-                      }
-                    >
-                      Portefeuille
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
+    <Page
+      title="Portefeuilles commerciaux"
+      description="Recettes et stock chez les clients de chaque commercial, en PDF."
+    >
+      {error && <Alert>{error}</Alert>}
+      {commerciaux && (
+        <DataTable
+          columns={columns}
+          rows={commerciaux}
+          rowKey={(row) => row.id}
+          empty="Aucun commercial enregistré."
+        />
+      )}
       <PdfViewer pdf={pdf} onClose={closePdf} />
-    </div>
+    </Page>
   );
 };
 

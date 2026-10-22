@@ -2,11 +2,43 @@ import React, { useState, useEffect } from "react";
 import { Search } from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
 import { API_BASE } from "../config";
-import "./Peintres.css";
+import { readErrorMessage } from "../utils/http";
+import { toast } from "../utils/toast";
+import {
+  Actions,
+  Alert,
+  Button,
+  DataTable,
+  Form,
+  Grid,
+  Input,
+  Page,
+  Section,
+  TextField,
+} from "../ui";
 
 const API_URL = `${API_BASE}/Peintres`;
 
 const EMPTY_FORM = { nom: "", telephone: "", telephone2: "" };
+
+const COLUMNS = [
+  { key: "nom", label: "Nom", primary: true },
+  {
+    key: "telephone",
+    label: "Téléphone",
+    render: (p) => (
+      <>
+        {p.telephone}
+        {p.telephone2 && <span className="ui-cell-sub">{p.telephone2}</span>}
+      </>
+    ),
+  },
+  {
+    key: "createdAt",
+    label: "Ajouté le",
+    render: (p) => new Date(p.createdAt).toLocaleDateString("fr-FR"),
+  },
+];
 
 const Peintres = () => {
   const { authFetch } = useAuth();
@@ -15,7 +47,6 @@ const Peintres = () => {
   const [loadError, setLoadError] = useState("");
   const [formData, setFormData] = useState(EMPTY_FORM);
   const [isSaving, setIsSaving] = useState(false);
-  const [message, setMessage] = useState(null);
   const [search, setSearch] = useState("");
 
   const loadPeintres = async () => {
@@ -41,12 +72,9 @@ const Peintres = () => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setMessage(null);
-
+  const handleSubmit = async () => {
     if (!formData.nom.trim() || !formData.telephone.trim()) {
-      setMessage({ type: "error", text: "Le nom et le téléphone sont obligatoires." });
+      toast.error("Le nom et le téléphone sont obligatoires.");
       return;
     }
 
@@ -57,18 +85,16 @@ const Peintres = () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
       });
-      const data = await response.json();
       if (!response.ok) {
-        setMessage({ type: "error", text: data.message || "Erreur lors de l'ajout du peintre." });
+        toast.error(await readErrorMessage(response));
         return;
       }
-      setPeintres((prev) =>
-        [...prev, data].sort((a, b) => a.nom.localeCompare(b.nom))
-      );
+      const data = await response.json();
+      setPeintres((prev) => [...prev, data].sort((a, b) => a.nom.localeCompare(b.nom)));
       setFormData(EMPTY_FORM);
-      setMessage({ type: "success", text: `${data.nom} a été ajouté.` });
+      toast.success(`${data.nom} a été ajouté.`);
     } catch {
-      setMessage({ type: "error", text: "Une erreur est survenue lors de l'ajout." });
+      toast.error("Une erreur est survenue lors de l'ajout.");
     } finally {
       setIsSaving(false);
     }
@@ -85,117 +111,85 @@ const Peintres = () => {
     : peintres;
 
   return (
-    <div className="peintres">
-      <h1 className="peintres-title">Peintres</h1>
-
-      <form className="peintres-card" onSubmit={handleSubmit}>
-        <h2 className="peintres-subtitle">Ajouter un peintre</h2>
-        <div className="peintres-form-row">
-          <div className="peintres-form-group">
-            <label htmlFor="peintre-nom">Nom *</label>
-            <input
-              type="text"
-              id="peintre-nom"
+    <Page title="Peintres" description="Les peintres partenaires et leurs contacts.">
+      <Section title="Ajouter un peintre">
+        <Form onSubmit={handleSubmit}>
+          <Grid>
+            <TextField
+              label="Nom"
+              required
               name="nom"
               value={formData.nom}
               onChange={handleInputChange}
-              className="peintres-input"
               maxLength={255}
+              autoComplete="off"
             />
-          </div>
-          <div className="peintres-form-group">
-            <label htmlFor="peintre-telephone">Téléphone *</label>
-            <input
+            <TextField
+              label="Téléphone"
+              required
               type="tel"
-              id="peintre-telephone"
+              inputMode="tel"
               name="telephone"
               value={formData.telephone}
               onChange={handleInputChange}
-              className="peintres-input"
+              autoComplete="off"
             />
-          </div>
-          <div className="peintres-form-group">
-            <label htmlFor="peintre-telephone2">Téléphone 2</label>
-            <input
+            <TextField
+              label="Téléphone 2"
               type="tel"
-              id="peintre-telephone2"
+              inputMode="tel"
               name="telephone2"
               value={formData.telephone2}
               onChange={handleInputChange}
-              className="peintres-input"
+              autoComplete="off"
             />
-          </div>
-        </div>
+          </Grid>
+          <Actions>
+            <Button type="submit" loading={isSaving}>
+              Ajouter le peintre
+            </Button>
+          </Actions>
+        </Form>
+      </Section>
 
-        {message && (
-          <div className={`peintres-message ${message.type}`}>{message.text}</div>
-        )}
-
-        <div className="peintres-actions">
-          <button type="submit" className="peintres-btn" disabled={isSaving}>
-            {isSaving ? "Enregistrement..." : "Enregistrer"}
-          </button>
-        </div>
-      </form>
-
-      <div className="peintres-card">
-        <div className="peintres-list-header">
-          <h2 className="peintres-subtitle">
-            Liste des peintres {!isLoading && !loadError && `(${peintres.length})`}
-          </h2>
-          <div className="peintres-search">
+      <Section
+        title={`Liste des peintres${!isLoading && !loadError ? ` (${peintres.length})` : ""}`}
+        actions={
+          <div className="ui-search">
             <Search size={18} />
-            <input
-              type="text"
-              placeholder="Rechercher par nom ou téléphone"
+            <Input
+              type="search"
+              placeholder="Nom ou téléphone"
+              aria-label="Rechercher un peintre"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
-        </div>
-
-        {isLoading ? (
-          <p className="peintres-empty">Chargement...</p>
-        ) : loadError ? (
-          <div className="peintres-message error">
-            {loadError}{" "}
-            <button type="button" className="peintres-link" onClick={loadPeintres}>
+        }
+      >
+        {loadError ? (
+          <Alert>
+            {loadError}
+            <Button variant="ghost" size="sm" onClick={loadPeintres}>
               Réessayer
-            </button>
-          </div>
-        ) : filtered.length === 0 ? (
-          <p className="peintres-empty">
-            {query ? "Aucun peintre ne correspond à la recherche." : "Aucun peintre enregistré."}
-          </p>
+            </Button>
+          </Alert>
         ) : (
-          <div className="peintres-table-container">
-            <table className="peintres-table">
-              <thead>
-                <tr>
-                  <th>Nom</th>
-                  <th>Téléphone</th>
-                  <th>Ajouté le</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map((p) => (
-                  <tr key={p.id}>
-                    <td>{p.nom}</td>
-                    <td>
-                      {p.telephone}
-                      {p.telephone2 && (
-                        <span className="peintres-phone2">{p.telephone2}</span>
-                      )}
-                    </td>
-                    <td>{new Date(p.createdAt).toLocaleDateString("fr-FR")}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <DataTable
+            columns={COLUMNS}
+            rows={isLoading ? [] : filtered}
+            rowKey={(p) => p.id}
+            empty={
+              isLoading
+                ? "Chargement…"
+                : query
+                  ? "Aucun peintre ne correspond à la recherche."
+                  : "Aucun peintre enregistré."
+            }
+          />
         )}
-      </div>
-    </div>
+      </Section>
+    </Page>
   );
 };
 

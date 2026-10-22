@@ -396,19 +396,6 @@ body {
   color: #9aa6b2;
 }
 
-.active-content h2 {
-  font-size: 24px;
-  color: #1e4a72;
-  margin-bottom: 15px;
-  font-weight: 600;
-}
-
-.active-content p {
-  font-size: 16px;
-  color: #666;
-  line-height: 1.6;
-}
-
 /* Phones and small tablets: the menu becomes a drawer */
 @media (max-width: 768px) {
   .sidebar {
