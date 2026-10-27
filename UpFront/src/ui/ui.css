@@ -16,6 +16,8 @@
   --ui-surface-alt: #f5f7fa;
   --ui-danger: #c62828;
   --ui-danger-soft: #fdecea;
+  --ui-warning: #b45309;
+  --ui-warning-soft: #fff4e0;
   --ui-success: #2e7d32;
   --ui-success-soft: #e8f5e9;
   --ui-radius: 8px;
@@ -694,6 +696,26 @@ textarea.ui-input {
 .ui-list-main {
   flex: 1;
   min-width: 0;
+}
+
+.ui-badge {
+  display: inline-block;
+  margin-right: 6px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  vertical-align: 1px;
+}
+
+.ui-badge-danger {
+  color: var(--ui-danger);
+  background: var(--ui-danger-soft);
+}
+
+.ui-badge-warning {
+  color: var(--ui-warning);
+  background: var(--ui-warning-soft);
 }
 
 .ui-list-title {

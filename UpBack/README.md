@@ -13,6 +13,7 @@ Backend Express/Node.js destiné à remplacer le backend .NET existant
 | Vérification des mots de passe ASP.NET Identity (format V3, PBKDF2) | ✅ implémenté — tous les hash de `AspNetUsers` sont en V3 (SHA256/SHA512) |
 | `POST /api/User/login`, `POST /api/User/refresh` | ✅ branchés sur `AspNetUsers` / `AspNetUserRoles` / `RefreshTokens` — à tester avec un vrai compte |
 | `GET/POST /api/Peintres` (nouvelle table `Peintres`, voir `sql/001_create_peintres.sql`) | ✅ fonctionnel — n'existe que sur UpBack |
+| `POST /api/Stock/update` garde l'historique de chaque comptage (nouvelle table `StockVisites`, voir `sql/003_create_stock_visites.sql`) ; `GET /api/Accueil` s'en sert pour la liste « Ventes lentes » | ✅ fonctionnel — sans la table, la visite est enregistrée sans historique |
 | Stock, Clients, Historique, Facture, Command, Commerces, Statistique | ✅ toutes les routes utilisées par UpFront, logique reprise du backend .NET |
 | PDF (commandes, factures, recette, récap) | ✅ générés avec `pdfmake`, même mise en page que les PDF QuestPDF du .NET |
 

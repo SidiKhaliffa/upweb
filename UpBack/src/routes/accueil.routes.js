@@ -13,6 +13,87 @@ const VISIT_DELAY_DAYS = 14;
 // clients to visit are all listed).
 const LIST_SIZE = 5;
 
+// "Ventes lentes": sales are measured over this many days, and a client
+// whose stock would last this many days or more at that pace is slow.
+const SLOW_WINDOW_DAYS = 15;
+const SLOW_COVERAGE_DAYS = 15;
+
+// Clients whose stock moves slowly. Sales come from the visit history
+// (StockVisites: sold between two counts) when there is some; until then
+// they are estimated from what the client paid (recettes), compared with
+// the value of the stock on their shelves. Only clients whose stock was
+// counted, with something left, are considered.
+async function slowClients(day, scope) {
+  const [stocks] = await pool.query(
+    `SELECT c.Id AS id, c.Code AS code, c.Respnsible_Name AS name, TRIM(c.Zone) AS zone,
+            c.Phone_Number AS phone, c.Visit_Date AS lastVisit, st.qte AS stockQte, st.valeur AS stockValeur,
+            COALESCE(rc.total, 0) AS recettes, rc.last AS lastRecette
+     FROM Clients c
+     JOIN (SELECT s.ClientId, SUM(sp.Quantite) AS qte, SUM(sp.Quantite * p.PrixActuel) AS valeur
+           FROM Stocks s
+           JOIN StockProduits sp ON sp.StockId = s.Id
+           JOIN Produits p ON p.Id = sp.ProduitId
+           GROUP BY s.ClientId) st ON st.ClientId = c.Id
+     LEFT JOIN (SELECT CodeClient, SUM(Recette) AS total, MAX(Date) AS last
+                FROM HistoriqueRecettes
+                WHERE Date >= ? - INTERVAL ${SLOW_WINDOW_DAYS} DAY AND Date < ? + INTERVAL 1 DAY
+                GROUP BY CodeClient) rc ON rc.CodeClient = c.Code
+     WHERE st.qte > 0${scope("c")}`,
+    [day, day]
+  );
+
+  // Sold quantities between counts, when the history exists.
+  let sales = new Map();
+  try {
+    const [rows] = await pool.query(
+      `SELECT ClientId, SUM(Vendu) AS vendu,
+              DATEDIFF(MAX(VisitDate), MIN(PrevVisitDate)) AS days
+       FROM StockVisites
+       WHERE Vendu IS NOT NULL AND VisitDate >= ? - INTERVAL ${SLOW_WINDOW_DAYS} DAY
+         AND VisitDate < ? + INTERVAL 1 DAY
+       GROUP BY ClientId`,
+      [day, day]
+    );
+    sales = new Map(rows.filter((r) => r.days > 0).map((r) => [r.ClientId, r]));
+  } catch (err) {
+    if (err.code !== "ER_NO_SUCH_TABLE") throw err;
+  }
+
+  return stocks
+    .map((c) => {
+      const measured = sales.get(c.id);
+      // Days of stock left at the current pace; null = nothing sold.
+      let coverage;
+      if (measured) {
+        const perDay = Math.max(0, Number(measured.vendu)) / measured.days;
+        coverage = perDay > 0 ? c.stockQte / perDay : null;
+      } else {
+        const perDay = c.recettes / SLOW_WINDOW_DAYS;
+        coverage = perDay > 0 ? c.stockValeur / perDay : null;
+      }
+      return {
+        code: c.code,
+        name: c.name,
+        zone: c.zone,
+        phone: c.phone,
+        stockQte: Number(c.stockQte),
+        stockValeur: c.stockValeur,
+        recettes: c.recettes,
+        lastRecette: c.lastRecette ? toNetDateTime(c.lastRecette) : null,
+        lastVisit: c.lastVisit && c.lastVisit.getUTCFullYear() > 1900 ? toNetDateTime(c.lastVisit) : null,
+        basis: measured ? "ventes" : "recettes",
+        vendu: measured ? Number(measured.vendu) : null,
+        coverageDays: coverage == null ? null : Math.round(coverage),
+      };
+    })
+    .filter((c) => c.coverageDays == null || c.coverageDays >= SLOW_COVERAGE_DAYS)
+    .sort(
+      (a, b) =>
+        // Nothing sold first, then the slowest; bigger stock first on ties.
+        (b.coverageDays ?? Infinity) - (a.coverageDays ?? Infinity) || b.stockValeur - a.stockValeur
+    );
+}
+
 const isAdmin = (user) => {
   const roles = user?.[ROLE_CLAIM];
   return Array.isArray(roles) ? roles.includes("Admin") : roles === "Admin";
@@ -106,6 +187,8 @@ router.get("/", requireAuth, async (req, res, next) => {
       ),
     ]);
 
+    const lents = await slowClients(day, scope);
+
     // One Commands row per product; the first row of an order carries the
     // client, the next ones (Code NULL) only the product.
     const livraisons = [];
@@ -135,6 +218,12 @@ router.get("/", requireAuth, async (req, res, next) => {
       factures,
       livraisons: { count: mesLivraisons.length, upcoming: upcoming.count, items: mesLivraisons },
       soldes: { ...soldes, items: soldeRows },
+      lents: {
+        windowDays: SLOW_WINDOW_DAYS,
+        coverageDays: SLOW_COVERAGE_DAYS,
+        count: lents.length,
+        items: lents,
+      },
       visites: {
         delayDays: VISIT_DELAY_DAYS,
         count: visites.count,

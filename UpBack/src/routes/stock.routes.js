@@ -35,6 +35,50 @@ router.get("/Produits", async (req, res, next) => {
   }
 });
 
+// One StockVisites row: the count of one product at this visit, and what
+// was sold since the previous one (stock then + delivered since - stock
+// now). Unknown (NULL) on the first count or for a back-dated visit.
+async function visitHistoryRow(conn, { client, produit, prevVisit, visitDate, current, quantity }) {
+  const row = {
+    ClientId: client.Id,
+    ProduitId: produit.Id,
+    VisitDate: visitDate,
+    PrevVisitDate: prevVisit,
+    StockAvant: current ? current.Quantite : null,
+    Livre: 0,
+    StockCompte: quantity,
+    Vendu: null,
+  };
+  if (!current || !prevVisit || visitDate <= toNetDateTime(prevVisit).replace("T", " ")) return row;
+
+  const [[{ livre }]] = await conn.query(
+    `SELECT COALESCE(SUM(Quantite), 0) AS livre FROM Historiques
+     WHERE ClientId = ? AND NameProduit = ? AND Delivery_date > ? AND Delivery_date <= ?`,
+    [client.Id, produit.Name, prevVisit, visitDate]
+  );
+  row.Livre = Number(livre);
+  row.Vendu = row.StockAvant + row.Livre - quantity;
+  return row;
+}
+
+// The StockVisites table comes from sql/003_create_stock_visites.sql.
+// Until it is created, visits are saved without their history rather
+// than failing.
+async function saveVisitHistory(conn, rows) {
+  if (!rows.length) return;
+  try {
+    await conn.query(
+      `INSERT INTO StockVisites
+         (ClientId, ProduitId, VisitDate, PrevVisitDate, StockAvant, Livre, StockCompte, Vendu)
+       VALUES ?`,
+      [rows.map((r) => [r.ClientId, r.ProduitId, r.VisitDate, r.PrevVisitDate, r.StockAvant, r.Livre, r.StockCompte, r.Vendu])]
+    );
+  } catch (err) {
+    if (err.code !== "ER_NO_SUCH_TABLE") throw err;
+    console.warn("StockVisites table missing: run sql/003_create_stock_visites.sql");
+  }
+}
+
 // "Ajouter stock client": records what is left at the client on this
 // visit, and the value of that stock in the portefeuille.
 router.post("/update", async (req, res, next) => {
@@ -77,11 +121,20 @@ router.post("/update", async (req, res, next) => {
       );
       const existing = new Map(existingRows.map((r) => [r.ProduitId, r]));
 
+      // Previous visit: what was counted then, plus what was delivered
+      // since, minus what is counted now, is what the client sold.
+      const prevVisit =
+        client.Visit_Date && client.Visit_Date.getUTCFullYear() > 1900 ? client.Visit_Date : null;
+      const history = [];
+
       let stockValue = 0;
       for (const { name, quantity } of lines) {
         const produit = findProduit(produits, name);
         const value = produit.PrixActuel * quantity;
         const current = existing.get(produit.Id);
+        history.push(
+          await visitHistoryRow(conn, { client, produit, prevVisit, visitDate, current, quantity })
+        );
         if (current) {
           await conn.query(
             "UPDATE StockProduits SET Quantite = ?, prix_actuell = ? WHERE StockId = ? AND ProduitId = ?",
@@ -111,6 +164,8 @@ router.post("/update", async (req, res, next) => {
          WHERE Code = ?`,
         [visitDate, description, stockValue, stockValue, code]
       );
+
+      await saveVisitHistory(conn, history);
 
       // Also recomputes Produits.StockActuel from the new counts.
       await refreshProduitPercentages(conn);

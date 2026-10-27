@@ -165,8 +165,8 @@ export const CallButton = ({ phone, name }) =>
 /**
  * Short list of people or items: title, grey line, value on the right,
  * and a call button when there is a phone number.
- * items: [{ key, title, meta, value, phone }]; scroll caps the height for
- * long lists.
+ * items: [{ key, title, meta, value, phone, badge }]; badge is
+ * { label, tone: "danger"|"warning" }. scroll caps the height for long lists.
  */
 export const List = ({ items, empty, scroll }) =>
   items.length ? (
@@ -175,7 +175,14 @@ export const List = ({ items, empty, scroll }) =>
         <li key={item.key} className="ui-list-item">
           <div className="ui-list-main">
             <div className="ui-list-title">{item.title}</div>
-            {item.meta && <div className="ui-list-meta">{item.meta}</div>}
+            {(item.badge || item.meta) && (
+              <div className="ui-list-meta">
+                {item.badge && (
+                  <span className={`ui-badge ui-badge-${item.badge.tone}`}>{item.badge.label}</span>
+                )}
+                {item.meta}
+              </div>
+            )}
           </div>
           {item.value != null && <span className="ui-list-value">{item.value}</span>}
           <CallButton phone={item.phone} name={item.title} />

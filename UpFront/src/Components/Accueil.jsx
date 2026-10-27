@@ -36,6 +36,20 @@ const lastVisitLabel = (lastVisit, today) => {
 
 const place = (...parts) => parts.filter(Boolean).join(" · ");
 
+// "Ventes lentes": red when nothing was sold (or paid) over the window,
+// orange when the client sells but the stock would last too long.
+const slowBadge = (c) =>
+  c.coverageDays == null ? { label: "Aucune vente", tone: "danger" } : { label: "Lent", tone: "warning" };
+
+const slowLabel = (c, windowDays) => {
+  if (c.coverageDays == null) {
+    return c.basis === "ventes"
+      ? `Rien vendu en ${windowDays} jours`
+      : `Aucune recette en ${windowDays} jours`;
+  }
+  return `≈ ${formatNumber(c.coverageDays)} jours de stock à ce rythme`;
+};
+
 // Home page: what needs doing today, for the logged-in commercial (or
 // everyone, for an admin).
 const Accueil = () => {
@@ -168,6 +182,30 @@ const Accueil = () => {
                   title: v.name || v.code,
                   meta: place(v.zone?.trim(), lastVisitLabel(v.lastVisit, today)),
                   phone: v.phone,
+                }))}
+              />
+            </Card>
+
+            <Card
+              title="Ventes lentes"
+              count={plural(data.lents.count, "client")}
+              footer={
+                data.lents.items.some((c) => c.basis === "recettes")
+                  ? `Montant : valeur du stock chez le client. Estimation : ce stock comparé à ses recettes des ${data.lents.windowDays} derniers jours ; plus précis au fil des visites, avec les ventes réelles entre deux comptages.`
+                  : `Montant : valeur du stock chez le client. Stock qui durerait ${data.lents.coverageDays} jours ou plus au rythme des ventes des ${data.lents.windowDays} derniers jours.`
+              }
+            >
+              {/* Nothing sold first (biggest stock first), then the slowest. */}
+              <List
+                scroll
+                empty="Aucun client ne vend lentement."
+                items={data.lents.items.map((c) => ({
+                  key: c.code,
+                  title: c.name || c.code,
+                  badge: slowBadge(c),
+                  meta: place(c.zone, slowLabel(c, data.lents.windowDays)),
+                  value: formatAmount(c.stockValeur),
+                  phone: c.phone,
                 }))}
               />
             </Card>
