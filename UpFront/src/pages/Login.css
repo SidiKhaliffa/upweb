@@ -1,232 +1,168 @@
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-  }
-  
-  body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: #f5f5f5;
-  }
-  
-  .login-container {
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-  }
-  
-  .login-card {
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-    padding: 60px 40px;
-    width: 100%;
-    max-width: 450px;
-    text-align: center;
-  }
-  
-  /* Logo Section */
-  .logo-section {
-    margin-bottom: 40px;
-  }
-  
-  .logo {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: relative;
-    margin-bottom: 20px;
-    height: 200px;
-  }
-  
-  .logo-text {
-    display: flex;
-    align-items: flex-start;
-    gap: 8px;
-    z-index: 2;
-  }
-  
-  .up-text {
-    font-size: 32px;
-    font-weight: bold;
-    color: #DAA520;
-    background: linear-gradient(135deg, #DAA520, #FFD700);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-  
-  .company-text {
-    display: flex;
+/* Login.css — same look as the dashboard: blue sidebar gradient, logo in a
+ * white circle, ui.css fields and buttons. Brand panel on the left on wide
+ * screens, as a header above the form on phones.
+ */
+
+.login-page {
+  display: flex;
+  min-height: 100vh;
+  min-height: 100dvh;
+  background-color: #f5f6f8;
+}
+
+.login-brand {
+  flex: 0 0 42%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 48px 32px;
+  background: linear-gradient(180deg, #1e4a72 0%, #2d5aa0 100%);
+  color: white;
+  text-align: center;
+}
+
+.login-logo-mark {
+  width: 140px;
+  height: 140px;
+  background: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+.login-logo-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 50%;
+}
+
+.login-brand-name {
+  font-size: 28px;
+  font-weight: 600;
+}
+
+.login-brand-tagline {
+  max-width: 320px;
+  margin: 8px auto 0;
+  font-size: 16px;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.login-panel {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 24px;
+}
+
+.login-form {
+  width: 100%;
+  max-width: 400px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 36px 32px;
+  background: var(--ui-surface);
+  border: 1px solid var(--ui-border-soft);
+  border-radius: var(--ui-radius-lg);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+}
+
+.login-heading h2 {
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--ui-primary);
+}
+
+.login-heading p {
+  margin-top: 4px;
+  font-size: 15px;
+  color: var(--ui-text-muted);
+}
+
+/* Password field with a show/hide button inside it. */
+.login-password {
+  position: relative;
+}
+
+.login-password .ui-input {
+  width: 100%;
+  padding-right: 48px;
+}
+
+.login-password-toggle {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 44px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: none;
+  color: var(--ui-text-muted);
+  cursor: pointer;
+  border-radius: var(--ui-radius);
+}
+
+.login-password-toggle:hover {
+  color: var(--ui-primary);
+}
+
+.login-password-toggle:focus-visible {
+  outline: none;
+  box-shadow: var(--ui-focus);
+}
+
+.login-submit {
+  width: 100%;
+  margin-top: 4px;
+}
+
+@media (max-width: 800px) {
+  .login-page {
     flex-direction: column;
-    align-items: flex-start;
-    line-height: 1;
-  }
-  
-  .universelle {
-    font-size: 18px;
-    font-weight: 500;
-    color: #1e4a72;
-    margin-bottom: 2px;
-  }
-  
-  .peinture {
-    font-size: 20px;
-    font-weight: bold;
-    color: #1e4a72;
-  }
-  
-  .logo-circle {
-    position: absolute;
-    right: -20px;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 80px;
-    height: 80px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #DAA520, #1e4a72);
-    opacity: 0.8;
-    z-index: 1;
-  }
-  
-  /* Title Section */
-  .title-section {
-    margin-bottom: 40px;
-  }
-  
-  .title-section h1 {
-    font-size: 28px;
-    color: #333;
-    margin-bottom: 8px;
-    font-weight: 600;
-  }
-  
-  .title-section p {
-    color: #666;
-    font-size: 16px;
-    font-weight: 400;
-  }
-  
-  /* Form Section */
-  .login-form {
-    margin-bottom: 20px;
   }
 
-  .login-error-message {
-    background-color: #fee;
-    border-left: 4px solid #f44;
-    color: #c33;
-    padding: 15px;
-    margin-bottom: 20px;
-    border-radius: 4px;
-    font-weight: 500;
-    font-size: 14px;
+  .login-brand {
+    flex: none;
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: 14px;
+    padding: 20px 16px;
     text-align: left;
   }
-  
-  .input-group {
-    margin-bottom: 20px;
+
+  .login-logo-mark {
+    width: 56px;
+    height: 56px;
+    flex-shrink: 0;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   }
-  
-  .login-input {
-    width: 100%;
-    padding: 16px 20px;
-    border: 2px solid #e1e5e9;
-    border-radius: 8px;
-    font-size: 16px;
-    color: #333;
-    background-color: #fff;
-    transition: all 0.3s ease;
-    outline: none;
+
+  .login-brand-name {
+    font-size: 20px;
   }
-  
-  .login-input::placeholder {
-    color: #aaa;
-    font-weight: 400;
+
+  .login-brand-tagline {
+    margin: 2px 0 0;
+    font-size: 14px;
   }
-  
-  .login-input:focus {
-    border-color: #1e4a72;
-    box-shadow: 0 0 0 3px rgba(30, 74, 114, 0.1);
+
+  .login-panel {
+    align-items: flex-start;
+    padding: 24px 16px;
   }
-  
-  /* Buttons */
-  .login-button,
-  .create-account-button {
-    width: 100%;
-    padding: 16px 20px;
-    border: none;
-    border-radius: 8px;
-    font-size: 16px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    margin-bottom: 15px;
+
+  .login-form {
+    padding: 24px 20px;
   }
-  
-  .login-button {
-    background: linear-gradient(135deg, #1e4a72, #2d5aa0);
-    color: white;
-    box-shadow: 0 4px 15px rgba(30, 74, 114, 0.3);
-  }
-  
-  .login-button:hover {
-    background: linear-gradient(135deg, #2d5aa0, #1e4a72);
-    box-shadow: 0 6px 20px rgba(30, 74, 114, 0.4);
-    transform: translateY(-2px);
-  }
-  
-  .login-button:active {
-    transform: translateY(0);
-    box-shadow: 0 2px 10px rgba(30, 74, 114, 0.3);
-  }
-  
-  .create-account-button {
-    background: linear-gradient(135deg, #1e4a72, #2d5aa0);
-    color: white;
-    box-shadow: 0 4px 15px rgba(30, 74, 114, 0.3);
-  }
-  
-  .create-account-button:hover {
-    background: linear-gradient(135deg, #2d5aa0, #1e4a72);
-    box-shadow: 0 6px 20px rgba(30, 74, 114, 0.4);
-    transform: translateY(-2px);
-  }
-  
-  .create-account-button:active {
-    transform: translateY(0);
-    box-shadow: 0 2px 10px rgba(30, 74, 114, 0.3);
-  }
-  
-  /* Responsive Design */
-  @media (max-width: 480px) {
-    .login-card {
-      padding: 40px 20px;
-      margin: 10px;
-    }
-    
-    .title-section h1 {
-      font-size: 24px;
-    }
-    
-    .up-text {
-      font-size: 28px;
-    }
-    
-    .universelle {
-      font-size: 16px;
-    }
-    
-    .peinture {
-      font-size: 18px;
-    }
-    
-    .logo-circle {
-      width: 60px;
-      height: 60px;
-      right: -15px;
-    }
 }

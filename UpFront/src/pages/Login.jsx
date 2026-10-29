@@ -1,12 +1,16 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { Eye, EyeOff, LogIn } from "lucide-react";
 import { API_BASE } from "../config";
+import { Alert, Button, Field, Input, TextField } from "../ui";
 import "./Login.css";
 
 const Login = () => {
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -24,111 +28,95 @@ const Login = () => {
       setError("Veuillez entrer votre identifiant et votre mot de passe.");
       return;
     }
+    setLoading(true);
     try {
-      const response = await fetch(
-        `${API_BASE}/User/login`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            userName: identifier,
-            password: password,
-          }),
-        }
-      );
-      const data = await response.json();
+      const response = await fetch(`${API_BASE}/User/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userName: identifier, password }),
+      });
       if (response.ok) {
+        const data = await response.json();
         localStorage.setItem("token", data.accessToken);
         localStorage.setItem("refreshToken", data.refreshToken);
         localStorage.setItem("expiration", data.expiration);
         localStorage.setItem("user", JSON.stringify(data.user));
         navigate("/dashboard", { state: { loginSuccess: true } });
       } else {
-        setError(
-          "Identifiant ou mot de passe incorrect."
-        );
+        setError("Identifiant ou mot de passe incorrect.");
       }
     } catch (error) {
       console.error("Error:", error);
       setError("Une erreur est survenue lors de la connexion.");
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleCreateAccount = () => {
-    // Handle create account logic here
-    console.log("Create new account clicked");
-  };
+  const clearError = () => error && setError("");
 
   return (
-    <div className="login-container">
-      <div className="login-card">
-        {/* Logo Section */}
-        <div className="logo-section">
-          <div className="logo">
-            <img src="/UpLogo.ico" alt="UP Logo" className="logo-image" />
-            {/* <div className="logo-text">
-              <span className="up-text">UP</span>
-              <div className="company-text">
-                <span className="universelle">universelle</span>
-                <span className="peinture">Peinture</span>
-              </div>
-            </div> */}
-            {/* <div className="logo-circle"></div> */}
-          </div>
+    <div className="login-page">
+      {/* Same colours as the dashboard's sidebar. */}
+      <aside className="login-brand">
+        <div className="login-logo-mark">
+          <img src="/UpLogo.ico" alt="" className="login-logo-image" />
         </div>
-
-        {/* Title Section */}
-        <div className="title-section">
-          <h1>Universelle Peinture</h1>
-          <p>Veuillez vous connectez</p>
+        <div>
+          <h1 className="login-brand-name">Universelle Peinture</h1>
+          <p className="login-brand-tagline">Ventes, stock et livraisons des commerciaux.</p>
         </div>
+      </aside>
 
-        {/* Form Section */}
-        <div className="login-form">
-          {error && <div className="login-error-message">{error}</div>}
-
-          <div className="input-group">
-            <input
-              type="text"
-              placeholder="Enter Identifiant"
-              value={identifier}
-              onChange={(e) => {
-                setIdentifier(e.target.value);
-                if (error) setError("");
-              }}
-              className="login-input"
-            />
+      <main className="login-panel">
+        <form className="login-form" onSubmit={handleLogin} noValidate>
+          <div className="login-heading">
+            <h2>Connexion</h2>
+            <p>Entrez votre identifiant et votre mot de passe.</p>
           </div>
 
-          <div className="input-group">
-            <input
-              type="password"
-              placeholder="Enter Mots de Passe"
-              value={password}
-              onChange={(e) => {
-                setPassword(e.target.value);
-                if (error) setError("");
-              }}
-              className="login-input"
-            />
-          </div>
+          {error && <Alert>{error}</Alert>}
 
-          <button type="button" className="login-button" onClick={handleLogin}>
-            Connectez-Vous
-          </button>
-        </div>
+          <TextField
+            label="Identifiant"
+            autoComplete="username"
+            autoCapitalize="none"
+            autoFocus
+            value={identifier}
+            onChange={(e) => {
+              setIdentifier(e.target.value);
+              clearError();
+            }}
+          />
 
-        {/* Create Account Button */}
-        <button
-          type="button"
-          className="create-account-button"
-          onClick={handleCreateAccount}
-        >
-          Créer un Nouveau Commercial
-        </button>
-      </div>
+          <Field label="Mot de passe" htmlFor="login-password">
+            <div className="login-password">
+              <Input
+                id="login-password"
+                type={showPassword ? "text" : "password"}
+                autoComplete="current-password"
+                value={password}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  clearError();
+                }}
+              />
+              <button
+                type="button"
+                className="login-password-toggle"
+                onClick={() => setShowPassword((v) => !v)}
+                aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
+          </Field>
+
+          <Button type="submit" icon={LogIn} loading={loading} className="login-submit">
+            Se connecter
+          </Button>
+        </form>
+      </main>
     </div>
   );
 };
