@@ -15,6 +15,7 @@ import {
   spanFill,
   totalCell,
 } from "../utils/pdf.js";
+import { produitOrder } from "../utils/business.js";
 
 const router = Router();
 
@@ -167,7 +168,7 @@ router.get("/GenerateRecapPdf", async (req, res, next) => {
     }
 
     const [produits] = await pool.query(
-      "SELECT Id, Name, PrixActuel FROM Produits ORDER BY Id"
+      `SELECT p.Id, p.Name, p.PrixActuel FROM Produits p ORDER BY ${produitOrder("p")}`
     );
     const [stockProduits] = await pool.query(
       "SELECT StockId, ProduitId, Quantite FROM StockProduits WHERE StockId IN (?)",

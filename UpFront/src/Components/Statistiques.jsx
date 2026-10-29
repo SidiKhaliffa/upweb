@@ -153,7 +153,10 @@ const Statistiques = () => {
       }
       const statistiques = await response.json();
 
-      const rows = (statistiques?.statistiquProduits || []).map((item) => ({
+      // The API lists Univinyl first, then Unilatex, then the others:
+      // "rang" keeps that order when sorting by product.
+      const rows = (statistiques?.statistiquProduits || []).map((item, index) => ({
+        rang: index,
         produit: item.produit,
         stockFabrique: item.stock_fabrique,
         stockActuel: item.stock_actuel,
@@ -213,9 +216,7 @@ const Statistiques = () => {
     const { key, direction } = sortConfig;
     const factor = direction === "asc" ? 1 : -1;
     return [...filtered].sort((a, b) =>
-      key === "produit"
-        ? factor * (a.produit || "").localeCompare(b.produit || "")
-        : factor * ((a[key] || 0) - (b[key] || 0))
+      factor * ((a[key === "produit" ? "rang" : key] || 0) - (b[key === "produit" ? "rang" : key] || 0))
     );
   }, [productStats, searchTerm, sortConfig]);
 

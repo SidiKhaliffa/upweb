@@ -1,7 +1,7 @@
 import { Router } from "express";
 import pool from "../config/db.js";
 import { requireAuth } from "../middleware/auth.js";
-import { STOCK_ACTUEL_SQL } from "../utils/business.js";
+import { STOCK_ACTUEL_SQL, produitOrder } from "../utils/business.js";
 
 const router = Router();
 
@@ -19,7 +19,7 @@ router.get("/", requireAuth, async (req, res, next) => {
   try {
     const [produits] = await pool.query(
       `SELECT p.Name, p.stock, ${STOCK_ACTUEL_SQL} AS StockActuel, p.PrixActuel
-       FROM Produits p ORDER BY p.Id`
+       FROM Produits p ORDER BY ${produitOrder("p")}`
     );
     const totalStock = produits.reduce((sum, p) => sum + p.stock, 0);
 

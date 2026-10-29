@@ -75,6 +75,12 @@ export function parseProductLines(lines, field = "StockProduitdto") {
   });
 }
 
+// Order in which products are listed everywhere: the Univinyl range
+// first, then Unilatex, then the others; by Id within each group
+// (5KG, 20KG, 25KG, 30KG were created in that order).
+export const produitOrder = (alias) =>
+  `CASE WHEN ${alias}.Name LIKE 'UNIV%NYL%' THEN 0 WHEN ${alias}.Name LIKE 'UNILATEX%' THEN 1 ELSE 2 END, ${alias}.Id`;
+
 // Recomputes the stored percentages of every product from its current
 // stock. .NET only refreshed them on factures, so stock updates left them
 // stale; Statistique computes them live anyway.

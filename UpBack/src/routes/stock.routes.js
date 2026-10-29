@@ -9,6 +9,7 @@ import {
   getClientByCode,
   getPortefeuilleByCode,
   getProduitsByName,
+  produitOrder,
   findProduit,
   parseProductLines,
   requireText,
@@ -27,7 +28,7 @@ router.use(requireAuth);
 router.get("/Produits", async (req, res, next) => {
   try {
     const [rows] = await pool.query(
-      "SELECT Name AS name FROM Produits ORDER BY Id"
+      `SELECT p.Name AS name FROM Produits p ORDER BY ${produitOrder("p")}`
     );
     res.json(rows);
   } catch (err) {
