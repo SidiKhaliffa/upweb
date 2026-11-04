@@ -24,15 +24,23 @@ export async function getClientByCode(conn, code) {
   return rows[0];
 }
 
-export async function getPortefeuilleByCode(conn, code, { required = true } = {}) {
-  const [rows] = await conn.query(
-    "SELECT * FROM portFeuilleClients WHERE Code = ? FOR UPDATE",
-    [code]
+// The client's portefeuille, created empty (balance 0) when the client
+// has none yet, so a facture, commande, recette or stock count is never
+// refused for a missing portefeuille. Callers lock the client row first
+// (getClientByCode), so two requests can't both create one.
+export async function getOrCreatePortefeuille(conn, client) {
+  const select = () =>
+    conn.query("SELECT * FROM portFeuilleClients WHERE Code = ? FOR UPDATE", [client.Code]);
+  const [rows] = await select();
+  if (rows.length) return rows[0];
+  await conn.query(
+    `INSERT INTO portFeuilleClients
+       (Code, name, zone, phone, CommercantId, PriceCompta, currentPrice, LastPrise, PricePayer)
+     VALUES (?, ?, ?, ?, ?, 0, 0, 0, 0)`,
+    [client.Code, client.Respnsible_Name, client.Zone, client.Phone_Number, client.CommercantId]
   );
-  if (!rows.length && required) {
-    throw httpError(404, "Portefeuille client introuvable.");
-  }
-  return rows[0] ?? null;
+  const [created] = await select();
+  return created[0];
 }
 
 export async function getProduitsByName(conn, names) {

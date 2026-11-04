@@ -6,7 +6,7 @@ import { withTransaction } from "../utils/transaction.js";
 import { parseDateInput, dayOf, formatFrDay } from "../utils/dates.js";
 import {
   getClientByCode,
-  getPortefeuilleByCode,
+  getOrCreatePortefeuille,
   getProduitsByName,
   findProduit,
   parseProductLines,
@@ -44,7 +44,7 @@ router.post("/", async (req, res, next) => {
 
     await withTransaction(async (conn) => {
       const client = await getClientByCode(conn, code);
-      const portefeuille = await getPortefeuilleByCode(conn, code);
+      const portefeuille = await getOrCreatePortefeuille(conn, client);
       const [commerces] = await conn.query(
         "SELECT Nom FROM Commerces WHERE Id = ?",
         [client.CommercantId]

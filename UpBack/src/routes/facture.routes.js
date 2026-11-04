@@ -7,7 +7,7 @@ import { parseDateInput, dayOf, formatFr, formatFrDay } from "../utils/dates.js"
 import {
   getCurrentCommercial,
   getClientByCode,
-  getPortefeuilleByCode,
+  getOrCreatePortefeuille,
   getProduitsByName,
   findProduit,
   parseProductLines,
@@ -52,7 +52,7 @@ router.post("/Add", async (req, res, next) => {
     await withTransaction(async (conn) => {
       const client = await getClientByCode(conn, code);
       const commercial = await getCurrentCommercial(conn, req.user);
-      const portefeuille = await getPortefeuilleByCode(conn, code);
+      const portefeuille = await getOrCreatePortefeuille(conn, client);
       const produits = await getProduitsByName(conn, lines.map((l) => l.name));
 
       await conn.query(

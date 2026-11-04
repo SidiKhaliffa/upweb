@@ -7,7 +7,7 @@ import { parseDateInput, dayOf, toNetDateTime } from "../utils/dates.js";
 import {
   getCurrentCommercial,
   getClientByCode,
-  getPortefeuilleByCode,
+  getOrCreatePortefeuille,
   getProduitsByName,
   produitOrder,
   findProduit,
@@ -155,6 +155,7 @@ router.post("/update", async (req, res, next) => {
         stockId,
       ]);
 
+      await getOrCreatePortefeuille(conn, client);
       // .NET did "PricePayer += PriceCompta - previousStockValue", which
       // grew the amount owed on every visit. The amount owed is the
       // balance minus the stock still at the client.
@@ -185,29 +186,11 @@ router.post("/PriseCompta", async (req, res, next) => {
     const amount = requireAmount(req.body?.priseCompta, "Montant invalide.");
 
     await withTransaction(async (conn) => {
-      const portefeuille = await getPortefeuilleByCode(conn, code, { required: false });
-      if (portefeuille) {
-        await conn.query(
-          "UPDATE portFeuilleClients SET PriceCompta = ?, PricePayer = ? - COALESCE(currentPrice, 0) WHERE Id = ?",
-          [amount, amount, portefeuille.Id]
-        );
-        return;
-      }
       const client = await getClientByCode(conn, code);
-      const commercial = await getCurrentCommercial(conn, req.user);
+      const portefeuille = await getOrCreatePortefeuille(conn, client);
       await conn.query(
-        `INSERT INTO portFeuilleClients
-           (Code, name, zone, phone, CommercantId, PriceCompta, currentPrice, LastPrise, PricePayer)
-         VALUES (?, ?, ?, ?, ?, ?, 0, 0, ?)`,
-        [
-          client.Code,
-          client.Respnsible_Name,
-          client.Zone,
-          client.Phone_Number,
-          commercial.Id,
-          amount,
-          amount,
-        ]
+        "UPDATE portFeuilleClients SET PriceCompta = ?, PricePayer = ? - COALESCE(currentPrice, 0) WHERE Id = ?",
+        [amount, amount, portefeuille.Id]
       );
     });
 
@@ -227,7 +210,7 @@ router.post("/recette", async (req, res, next) => {
 
     await withTransaction(async (conn) => {
       const client = await getClientByCode(conn, code);
-      const portefeuille = await getPortefeuilleByCode(conn, code);
+      const portefeuille = await getOrCreatePortefeuille(conn, client);
 
       // Same double-submit guard as .NET, but reported instead of
       // answering "succès" without saving anything.
