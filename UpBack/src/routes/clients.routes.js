@@ -63,8 +63,13 @@ const optionalDate = (value, field) =>
 router.post("/", requireAuth, async (req, res, next) => {
   try {
     const body = req.body;
+    const code = requireText(pick(body, "Code"), "Le code client est obligatoire.");
+    // Codes are the accounting account numbers (e.g. 410000273): digits only.
+    if (!/^\d+$/.test(code)) {
+      throw httpError(400, "Le code client doit contenir uniquement des chiffres.");
+    }
     const client = {
-      Code: requireText(pick(body, "Code"), "Le code client est obligatoire."),
+      Code: code,
       Respnsible_Name: requireText(
         pick(body, "Respnsible_Name"),
         "Le nom du responsable est obligatoire."

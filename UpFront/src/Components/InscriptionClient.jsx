@@ -34,6 +34,12 @@ const InscriptionClient = () => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  // The client code is an account number (e.g. 410000273): digits only.
+  const handleCodeChange = (e) => {
+    const code = e.target.value.replace(/\D/g, "");
+    setFormData((prev) => ({ ...prev, code }));
+  };
+
   // Commerciaux register clients on site: the phone's position fills the
   // GPS field.
   const fillPosition = () => {
@@ -99,7 +105,11 @@ const InscriptionClient = () => {
             required
             name="code"
             value={formData.code}
-            onChange={handleInputChange}
+            onChange={handleCodeChange}
+            inputMode="numeric"
+            pattern="[0-9]*"
+            placeholder="Ex. 410000273"
+            hint="Chiffres uniquement"
             autoComplete="off"
           />
           <TextField
