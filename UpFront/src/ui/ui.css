@@ -349,6 +349,12 @@ textarea.ui-input {
   color: #8e1c1c;
 }
 
+.ui-alert-warning {
+  background: var(--ui-warning-soft);
+  border-color: var(--ui-warning);
+  color: #7a3a06;
+}
+
 .ui-alert-info {
   background: var(--ui-primary-soft);
   border-color: var(--ui-primary);

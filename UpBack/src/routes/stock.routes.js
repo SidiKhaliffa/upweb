@@ -62,6 +62,55 @@ async function visitHistoryRow(conn, { client, produit, prevVisit, visitDate, cu
   return row;
 }
 
+// Products the client had at the last count (stock > 0) or received
+// since it, that are not in this count. A count lists everything left on
+// the shelf, so these are now at 0: sold since the last visit.
+async function uncountedProduits(conn, { client, stockId, prevVisit, until, countedIds = [] }) {
+  const [rows] = await conn.query(
+    `SELECT p.Id, p.Name, COALESCE(sp.Quantite, 0) AS stock, COALESCE(h.livre, 0) AS livre
+     FROM Produits p
+     LEFT JOIN StockProduits sp ON sp.ProduitId = p.Id AND sp.StockId = ?
+     LEFT JOIN (SELECT NameProduit, SUM(Quantite) AS livre FROM Historiques
+                WHERE ClientId = ? AND Delivery_date > ? AND Delivery_date <= ?
+                GROUP BY NameProduit) h ON h.NameProduit = p.Name
+     WHERE (sp.Quantite > 0 OR h.livre > 0)${countedIds.length ? " AND p.Id NOT IN (?)" : ""}
+     ORDER BY ${produitOrder("p")}`,
+    [stockId ?? null, client.Id, prevVisit, until, ...(countedIds.length ? [countedIds] : [])]
+  );
+  return rows.map((r) => ({ ...r, stock: Number(r.stock), livre: Number(r.livre) }));
+}
+
+const lastVisitOf = (client) =>
+  client.Visit_Date && client.Visit_Date.getUTCFullYear() > 1900 ? client.Visit_Date : null;
+
+// What the stock form shows before saving: the products that will be set
+// to 0 if they are not counted.
+router.get("/client", async (req, res, next) => {
+  try {
+    const code = requireText(req.query.code, "Le code client est obligatoire.");
+    const [clients] = await pool.query("SELECT * FROM Clients WHERE Code = ?", [code]);
+    if (!clients.length) throw httpError(404, "Client introuvable.");
+    const client = clients[0];
+    const [stocks] = await pool.query(
+      "SELECT Id FROM Stocks WHERE ClientId = ? ORDER BY Id LIMIT 1",
+      [client.Id]
+    );
+    const prevVisit = lastVisitOf(client);
+    const produits = await uncountedProduits(pool, {
+      client,
+      stockId: stocks[0]?.Id,
+      prevVisit,
+      until: new Date(),
+    });
+    res.json({
+      lastVisit: prevVisit ? toNetDateTime(prevVisit) : null,
+      produits: produits.map((p) => ({ name: p.Name, stock: p.stock, livre: p.livre })),
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // The StockVisites table comes from sql/003_create_stock_visites.sql.
 // Until it is created, visits are saved without their history rather
 // than failing.
@@ -124,8 +173,7 @@ router.post("/update", async (req, res, next) => {
 
       // Previous visit: what was counted then, plus what was delivered
       // since, minus what is counted now, is what the client sold.
-      const prevVisit =
-        client.Visit_Date && client.Visit_Date.getUTCFullYear() > 1900 ? client.Visit_Date : null;
+      const prevVisit = lastVisitOf(client);
       const history = [];
 
       let stockValue = 0;
@@ -148,6 +196,33 @@ router.post("/update", async (req, res, next) => {
           );
         }
         stockValue += value;
+      }
+
+      // Not counted = none left: sold since the last visit.
+      const uncounted = await uncountedProduits(conn, {
+        client,
+        stockId,
+        prevVisit,
+        until: visitDate,
+        countedIds: [...produits.values()].map((p) => p.Id),
+      });
+      for (const produit of uncounted) {
+        history.push(
+          await visitHistoryRow(conn, {
+            client,
+            produit,
+            prevVisit,
+            visitDate,
+            current: { Quantite: produit.stock },
+            quantity: 0,
+          })
+        );
+        if (produit.stock > 0) {
+          await conn.query(
+            "UPDATE StockProduits SET Quantite = 0, prix_actuell = 0 WHERE StockId = ? AND ProduitId = ?",
+            [stockId, produit.Id]
+          );
+        }
       }
 
       await conn.query("UPDATE Stocks SET Quantity = ? WHERE Id = ?", [

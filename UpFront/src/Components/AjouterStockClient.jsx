@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useAuth } from "../hooks/useAuth";
 import { useProduits } from "../hooks/useProduits";
 import { API_BASE } from "../config";
@@ -8,6 +8,7 @@ import ClientPicker from "./ClientPicker";
 import { todayIso } from "./PdfViewer";
 import {
   Actions,
+  Alert,
   Button,
   EMPTY_LINE,
   Form,
@@ -21,6 +22,15 @@ import {
 
 const emptyForm = () => ({ CodeClient: "", Visit_date: todayIso(), description: "" });
 
+const PREVIEW_DELAY_MS = 300;
+
+const formatDay = (value) => new Date(value).toLocaleDateString("fr-FR", { timeZone: "UTC" });
+
+// "Unigloss : 5" — or "Unigloss : 0 + 3 livrés" for a product delivered
+// since the last count.
+const describeProduit = ({ name, stock, livre }) =>
+  livre > 0 ? `${name} : ${stock} + ${livre} livré${livre > 1 ? "s" : ""}` : `${name} : ${stock}`;
+
 // "Ajouter stock client": what is left on the client's shelf at this
 // visit. Whatever disappeared since the last visit counts as sold.
 const AjouterStockClient = () => {
@@ -29,6 +39,36 @@ const AjouterStockClient = () => {
   const [formData, setFormData] = useState(emptyForm);
   const [lines, setLines] = useState([EMPTY_LINE]);
   const [saving, setSaving] = useState(false);
+  // The client's previous stock: whatever is not counted now goes to 0.
+  const [previous, setPrevious] = useState(null);
+  const [confirming, setConfirming] = useState(false);
+
+  useEffect(() => {
+    setPrevious(null);
+    const code = formData.CodeClient.trim();
+    if (!code) return undefined;
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      try {
+        const response = await authFetch(
+          `${API_BASE}/Stock/client?code=${encodeURIComponent(code)}`
+        );
+        if (response.ok && !cancelled) setPrevious(await response.json());
+      } catch {
+        // No preview: the count is still saved, just without the reminder.
+      }
+    }, PREVIEW_DELAY_MS);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [formData.CodeClient]);
+
+  // Editing the form again cancels a pending confirmation.
+  useEffect(() => setConfirming(false), [formData, lines]);
+
+  const counted = new Set(lines.filter((l) => l.produit).map((l) => l.produit.toLowerCase()));
+  const uncounted = (previous?.produits ?? []).filter((p) => !counted.has(p.name.toLowerCase()));
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -58,7 +98,14 @@ const AjouterStockClient = () => {
       toast.error("Seuls les commerciaux peuvent ajouter du stock client.");
       return;
     }
+    if (uncounted.length && !confirming) {
+      setConfirming(true);
+      return;
+    }
+    save(items);
+  };
 
+  const save = async (items) => {
     setSaving(true);
     try {
       const response = await authFetch(`${API_BASE}/Stock/update`, {
@@ -76,6 +123,7 @@ const AjouterStockClient = () => {
         toast.success("Stock client enregistré.");
         setFormData(emptyForm());
         setLines([EMPTY_LINE]);
+        setPrevious(null);
       } else {
         toast.error(await readErrorMessage(response));
       }
@@ -121,6 +169,15 @@ const AjouterStockClient = () => {
         </Grid>
 
         <Section title="Stock compté">
+          {previous?.produits.length > 0 && (
+            <Alert type="info">
+              {previous.lastVisit
+                ? `Stock au dernier comptage (${formatDay(previous.lastVisit)})`
+                : "Stock actuel"}{" "}
+              : {previous.produits.map(describeProduit).join(", ")}. Un produit non compté sera
+              mis à 0 (vendu).
+            </Alert>
+          )}
           <ProductLines
             lines={lines}
             onChange={setLines}
@@ -131,11 +188,30 @@ const AjouterStockClient = () => {
           />
         </Section>
 
-        <Actions>
-          <Button type="submit" loading={saving}>
-            Enregistrer le stock
-          </Button>
-        </Actions>
+        {confirming ? (
+          <Alert type="warning">
+            <span>
+              Non compté{uncounted.length > 1 ? "s" : ""} :{" "}
+              <strong>{uncounted.map(describeProduit).join(", ")}</strong>.{" "}
+              {uncounted.length > 1 ? "Ces produits seront mis" : "Ce produit sera mis"} à 0
+              (vendu{uncounted.length > 1 ? "s" : ""}). Confirmer ?
+            </span>
+            <Actions>
+              <Button variant="secondary" onClick={() => setConfirming(false)} disabled={saving}>
+                Revenir au comptage
+              </Button>
+              <Button type="submit" loading={saving}>
+                Confirmer et enregistrer
+              </Button>
+            </Actions>
+          </Alert>
+        ) : (
+          <Actions>
+            <Button type="submit" loading={saving}>
+              Enregistrer le stock
+            </Button>
+          </Actions>
+        )}
       </Form>
     </Page>
   );
