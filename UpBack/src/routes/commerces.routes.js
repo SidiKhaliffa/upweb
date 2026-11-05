@@ -89,11 +89,13 @@ router.get("/GenerateRecettePdf", async (req, res, next) => {
     const fs = 7;
     let balanceTotal = 0;
     let produitVenduTotal = 0;
+    let recetteTotal = 0;
     const rows = portefeuilles.map((p) => {
       const balance = p.PriceCompta ?? 0;
       const produitVendu = balance - (stockValues.get(p.Code) ?? 0);
       balanceTotal += balance;
       produitVenduTotal += produitVendu;
+      recetteTotal += lastRecette.get(p.Code) ?? 0;
       return [
         cell(formatFr(p.visit), fs),
         cell(formatFr(p.depot), fs),
@@ -110,10 +112,12 @@ router.get("/GenerateRecettePdf", async (req, res, next) => {
     rows.push([
       totalCell("TOTAL", 9, { colSpan: 6 }),
       ...spanFill(5),
-      totalCell(balanceTotal > 0 ? formatNumber(balanceTotal) : "", 9),
-      totalCell(produitVenduTotal > 0 ? formatNumber(produitVenduTotal) : "", 9),
-      totalCell("", 9, { colSpan: 2 }),
-      ...spanFill(1),
+      // Shown even when negative: credit balances (client paid in advance)
+      // can bring the total below zero, and the total used to disappear.
+      totalCell(formatNumber(balanceTotal), 9),
+      totalCell(formatNumber(produitVenduTotal), 9),
+      totalCell(formatNumber(recetteTotal), 9),
+      totalCell("", 9),
     ]);
     const header = [
       "Date de visit",
