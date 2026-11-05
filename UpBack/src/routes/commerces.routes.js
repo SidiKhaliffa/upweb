@@ -2,7 +2,7 @@ import { Router } from "express";
 import pool from "../config/db.js";
 import { requireAuth } from "../middleware/auth.js";
 import { httpError } from "../utils/httpError.js";
-import { formatFr, formatFrDay, parseDateInput, dayOf } from "../utils/dates.js";
+import { formatFr, formatFrDay, parseDateInput, dayOf, toNetDateTime } from "../utils/dates.js";
 import {
   borderedTable,
   cell,
@@ -109,7 +109,8 @@ router.get("/GenerateRecettePdf", async (req, res, next) => {
         cell(formatAmount(p.PriceCompta), fs, "right"),
         cell(formatAmount(produitVendu), fs, "right"),
         cell(formatAmount(recetteDuJour.get(p.Code)), fs, "right"),
-        cell(p.Date_RDV, fs),
+        // Daily too: the RDV noted at a visit on that day only.
+        cell(dayOf(toNetDateTime(p.visit) ?? "") === day ? p.Date_RDV : "", fs),
       ];
     });
     rows.push([
