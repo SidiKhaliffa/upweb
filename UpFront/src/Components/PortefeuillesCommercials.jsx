@@ -28,8 +28,9 @@ const PortefeuillesCommercials = () => {
   const showRecette = ({ id, nom }) =>
     setPdf({
       title: `Recette – ${nom}`,
-      url: `${API_BASE}/Commerces/GenerateRecettePdf?idcomerce=${id}`,
-      fileName: `Recette_${nom}.pdf`,
+      // Recettes are daily: the viewer asks for the day (today by default).
+      urlForDate: (date) => `${API_BASE}/Commerces/GenerateRecettePdf?idcomerce=${id}&date=${date}`,
+      fileNameForDate: (date) => `Recette_${nom}_${date}.pdf`,
     });
 
   const showPortefeuille = ({ id, nom }) =>

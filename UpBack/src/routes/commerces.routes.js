@@ -2,7 +2,7 @@ import { Router } from "express";
 import pool from "../config/db.js";
 import { requireAuth } from "../middleware/auth.js";
 import { httpError } from "../utils/httpError.js";
-import { formatFr } from "../utils/dates.js";
+import { formatFr, formatFrDay, parseDateInput, dayOf } from "../utils/dates.js";
 import {
   borderedTable,
   cell,
@@ -56,14 +56,17 @@ async function getStockValues(codes) {
   return new Map(rows.map((r) => [r.Code, r.value]));
 }
 
-const today = () => new Date();
-const compactDate = (date) => date.toISOString().slice(0, 10).replaceAll("-", "");
-
-// "Recette" PDF of one commercial. .NET loaded the portefeuilles of every
-// commercial whatever the one requested; this one only lists theirs.
+// "Recette" PDF of one commercial for one day (?date=YYYY-MM-DD, today by
+// default — UTC is Mauritania's time). .NET loaded the portefeuilles of
+// every commercial whatever the one requested; this one only lists theirs.
 router.get("/GenerateRecettePdf", async (req, res, next) => {
   try {
     const commercial = await getCommercialFromQuery(req);
+    const day = dayOf(
+      req.query.date
+        ? parseDateInput(req.query.date, "date")
+        : new Date().toISOString().slice(0, 10) + " 00:00:00"
+    );
     const [portefeuilles] = await pool.query(
       `SELECT p.* FROM portFeuilleClients p
        JOIN Clients c ON c.Code = p.Code
@@ -76,15 +79,15 @@ router.get("/GenerateRecettePdf", async (req, res, next) => {
 
     const codes = portefeuilles.map((p) => p.Code);
     const stockValues = await getStockValues(codes);
+    // Recettes are daily: only what each client paid on that day (it used
+    // to show the client's last recette, whatever its date).
     const [recettes] = await pool.query(
-      `SELECT CodeClient, Recette FROM HistoriqueRecettes
-       WHERE CodeClient IN (?) ORDER BY Date DESC, Id DESC`,
-      [codes]
+      `SELECT CodeClient, SUM(Recette) AS total FROM HistoriqueRecettes
+       WHERE CodeClient IN (?) AND Date >= ? AND Date < ? + INTERVAL 1 DAY
+       GROUP BY CodeClient`,
+      [codes, day, day]
     );
-    const lastRecette = new Map();
-    for (const r of recettes) {
-      if (!lastRecette.has(r.CodeClient)) lastRecette.set(r.CodeClient, r.Recette);
-    }
+    const recetteDuJour = new Map(recettes.map((r) => [r.CodeClient, r.total]));
 
     const fs = 7;
     let balanceTotal = 0;
@@ -95,7 +98,7 @@ router.get("/GenerateRecettePdf", async (req, res, next) => {
       const produitVendu = balance - (stockValues.get(p.Code) ?? 0);
       balanceTotal += balance;
       produitVenduTotal += produitVendu;
-      recetteTotal += lastRecette.get(p.Code) ?? 0;
+      recetteTotal += recetteDuJour.get(p.Code) ?? 0;
       return [
         cell(formatFr(p.visit), fs),
         cell(formatFr(p.depot), fs),
@@ -105,7 +108,7 @@ router.get("/GenerateRecettePdf", async (req, res, next) => {
         cell(p.phone, fs),
         cell(formatAmount(p.PriceCompta), fs, "right"),
         cell(formatAmount(produitVendu), fs, "right"),
-        cell(formatAmount(lastRecette.get(p.Code)), fs, "right"),
+        cell(formatAmount(recetteDuJour.get(p.Code)), fs, "right"),
         cell(p.Date_RDV, fs),
       ];
     });
@@ -136,16 +139,15 @@ router.get("/GenerateRecettePdf", async (req, res, next) => {
       padding: 3,
     });
 
-    const now = today();
     await sendPdf(
       res,
       pageDocument({
         title: `Recette ${commercial.Nom}`,
-        subtitle: formatFr(now),
+        subtitle: formatFrDay(day),
         landscape: true,
         content: [borderedTable(widths, header, rows, 3)],
       }),
-      `Recette_${commercial.Nom}_${compactDate(now)}.pdf`
+      `Recette_${commercial.Nom}_${day.slice(0, 10).replaceAll("-", "")}.pdf`
     );
   } catch (err) {
     next(err);
